@@ -1,192 +1,253 @@
-// don't break if there's no console
-if(typeof(console) === "undefined")
-{
-	console = { log: function() {} };
-}
+(function (window, undefined) {
 
-var FO = FO || {};
+    var TIMEOUT = 60000;
 
-var fo_jsonp_callback_id = 0;
-var fo_jsonp_callbacks = {};
+    // don't break if there's no console
+    if (typeof (window.console) === "undefined") {
+        window.console = { log: function () { }, dir: function () { } };
+    }
 
-function fo_jsonp_get_callback(cb_id)
-{
-	if(fo_jsonp_callbacks[cb_id])
-	{
-		return fo_jsonp_callbacks[cb_id];
-	}
-	else
-	{
-		console.log("no callback with id " + cb_id);
-		return function(result) {};
-	}
-}
+    // PollDance.Request has on('finished', int code, object result) and on('error', int reason) callback members
+    // error reasons: 0=http, 1=timeout
+    // note: failed json parse on http body results in empty object {}, not error
 
-// FO.Request has onFinished(int code, object result) and onError(int reason) callback members
-// error reasons: 0=http, 1=timeout
-// note: failed json parse on http body results in empty object {}, not error
+    var JsonCallbacks = {
+        id: 0,
+        requests: {},
+        emptyCallback: function() {},
+        getJsonpCallback: function (id) {
+            var cb;
+            var requests = this.requests;
+            if (id in this.requests) {
+                cb = function (result) { requests[id]._jsonp_callback(result); };
+            } else {
+                console.log("no callback with id " + id);
+                cb = this.emptyCallback;
+            }
+            return cb;
+        },
+        addJsonpCallback: function (id, obj) {
+            this.requests[id] = obj;
+        },
+        removeJsonpCallback: function (id) {
+            delete this.requests[id];
+        },
+        newCallbackInfo: function () {
+            var callbackInfo = {
+                id: "cb-" + this.id,
+                scriptId: "fo-jsonp-script-" + this.id
+            };
+            this.id++;
+            return callbackInfo;
+        }
+    };
 
-FO.Request = function()
-{
-	if(!(this instanceof FO.Request))
-		throw new Error("Constructor called as a function");
-}
+    var corsAvailable = "withCredentials" in new XMLHttpRequest();
 
-FO.Request.prototype.start = function(method, url, headers, body)
-{
-	this._cors = false;
-	if("withCredentials" in new XMLHttpRequest())
-		this._cors = true;
+    var Events = function () {
+        this._events = {};
+    };
+    Events.prototype._getEventsForType = function (type) {
+        if (!(type in this._events)) {
+            this._events[type] = [];
+        }
+        return this._events[type];
+    };
+    Events.prototype._setEventsForType = function (type, events) {
+        this._events[type] = events;
+    };
+    Events.prototype.on = function (type, handler) {
+        var events = this._getEventsForType(type);
+        events.push(handler);
+    };
+    Events.prototype.off = function (type) {
+        if (arguments.length > 1) {
+            var events = this._getEventsForType(type);
+            var handlersToKeep = [];
+            var handlers = Array.prototype.slice.call(arguments, 1);
+            for (var i = 0; i < events.length; i++) {
+                var event = events[i];
+                var keep = true;
+                for (var j = 0; j < handlers.length; j++) {
+                    var handler = handlers[j];
+                    if (event == handler) {
+                        keep = false;
+                    }
+                }
+                if (keep) {
+                    handlersToKeep.push(event);
+                }
+            }
+            this._setEventsForType(type, handlersToKeep);
+        } else {
+            delete this._events[type];
+        }
 
-	var self = this;
-	this._timer = setTimeout(function() { self._timeout(); }, 60000);
+    };
+    Events.prototype.trigger = function (type, obj) {
+        var args = Array.prototype.slice.call(arguments, 2);
+        var events = this._getEventsForType(type);
+        for (var i = 0; i < events.length; i++) {
+            var handler = events[i];
+            handler.apply(obj, args);
+        }
+    };
 
-	if(this._cors)
-	{
-		this._xhr = new XMLHttpRequest();
+    var TransportTypes = {
+        "Auto": 0,
+        "Xhr": 1,
+        "Xdr": 2,
+        "Jsonp": 3
+    };
 
-		this._xhr.onreadystatechange = function() { self._xhr_readystatechange(); };
-		this._xhr.open(method, url, true);
+    var Request = function () {
+        if (!(this instanceof Request)) {
+            throw new Error("Constructor called as a function");
+        }
+        this._events = new Events();
+    };
+    Request.prototype.transport = TransportTypes.Auto;
+    Request.prototype.start = function (method, url, headers, body) {
+        var self = this;
+        self._timer = window.setTimeout(function () { self._timeout(); }, TIMEOUT);
 
-		for(var key in headers)
-		{
-			if(!headers.hasOwnProperty(key))
-				continue;
+        if (corsAvailable) {
 
-			this._xhr.setRequestHeader(key, headers[key]);
-		}
+            self._xhr = new XMLHttpRequest();
+            self._xhr.onreadystatechange = function () { self._xhr_readystatechange(); };
+            self._xhr.open(method, url, true);
 
-		this._xhr.send(body);
-	}
-	else
-	{
-		var head = document.getElementsByTagName("head")[0];
-		var script = document.createElement("script");
+            for (var key in headers) {
+                if (headers.hasOwnProperty(key)) {
+                    self._xhr.setRequestHeader(key, headers[key]);
+                }
+            }
 
-		script.type = "text/javascript";
+            self._xhr.send(body);
 
-		this._cb_id = fo_jsonp_callback_id.toString();
-		++fo_jsonp_callback_id;
+            console.log("PollDance.Request start: " + url + " " + body);
 
-		this._script_id = "fo-jsonp-script-" + this._cb_id;
-		script.id = this._script_id;
+        } else {
 
-		fo_jsonp_callbacks[this._cb_id] = function(result) { self._jsonp_callback(result); };
+            this._callbackInfo = JsonCallbacks.newCallbackInfo();
 
-		var param_list = new Array();
+            var paramList = [];
 
-		param_list.push("callback=" + encodeURIComponent("fo_jsonp_get_callback(\"" + this._cb_id + "\")"));
-		if(method != "GET")
-			param_list.push("method=" + encodeURIComponent(method));
-		if(headers)
-			param_list.push("headers=" + encodeURIComponent(JSON.stringify(headers)));
-		if(body)
-			param_list.push("body=" + encodeURIComponent(body));
+            paramList.push("callback=" + encodeURIComponent("PollDance._getJsonpCallback(\"" + this._callbackInfo.id + "\")"));
+            if (method != "GET") {
+                paramList.push("method=" + encodeURIComponent(method));
+            }
+            if (headers) {
+                paramList.push("headers=" + encodeURIComponent(JSON.stringify(headers)));
+            }
+            if (body) {
+                paramList.push("body=" + encodeURIComponent(body));
+            }
+            var params = paramList.join("&");
 
-		var params = param_list.join("&");
+            var src;
+            if (url.indexOf("?") != -1) {
+                src = url + "&" + params;
+            } else {
+                src = url + "?" + params;
+            }
 
-		var src;
-		if(url.indexOf("?") != -1)
-			src = url + "&" + params;
-		else
-			src = url + "?" + params;
+            console.log("PollDance.Request json-p " + this._callbackInfo.id + " " + src);
+            this._addJsonpCallback(this._callbackInfo, src);
+        }
+    };
+    Request.prototype.abort = function () {
+        clearTimeout(this._timer);
+        this._timer = null;
+        this._cancelreq();
+    };
+    Request.prototype.on = function (type, handler) {
+        this._events.on(type, handler);
+    };
+    Request.prototype.off = function (type) {
+        var args = Array.prototype.slice.call(arguments);
+        this._events.off.apply(this._events, args);
+    };
+    Request.prototype._addJsonpCallback = function (callbackInfo, src) {
+        JsonCallbacks.addJsonpCallback(callbackInfo.id, this);
 
-		script.src = src;
-		console.log("FO.Request json-p " + this._cb_id + " " + src);
-		head.appendChild(script);
-	}
-}
+        var head = document.getElementsByTagName("head")[0];
+        var script = document.createElement("script");
+        script.type = "text/javascript";
+        script.id = callbackInfo.scriptId;
+        script.src = src;
+        head.appendChild(script);
+    };
+    Request.prototype._removeJsonpCallback = function (callbackInfo) {
+        JsonCallbacks.removeJsonpCallback(callbackInfo.id, this);
 
-FO.Request.prototype.abort = function()
-{
-	clearTimeout(this._timer);
-	this._timer = null;
+        var script = document.getElementById(callbackInfo.scriptId);
+        script.parentNode.removeChild(script);
+    };
+    Request.prototype._cancelreq = function () {
+        if (corsAvailable) {
+            this._xhr.onreadystatechange = function () { }
+            this._xhr.abort();
+            this._xhr = null;
+        } else {
+            console.log("PollDance.Request json-p " + this._callbackInfo.id + " cancel");
+            this._removeJsonpCallback(this._callbackInfo);
+            this._callbackInfo = null;
+        }
+    };
+    Request.prototype._xhr_readystatechange = function () {
+        var xhr = this._xhr;
+        if (xhr != null && xhr.readyState === 4) {
+            this._xhr = null;
 
-	this._cancelreq();
-}
+            window.clearTimeout(this._timer);
+            this._timer = null;
 
-FO.Request.prototype._cancelreq = function()
-{
-	if(this._cors)
-	{
-		this._xhr.onreadystatechange = function() {}
-		this._xhr.abort();
-		this._xhr = null;
-	}
-	else
-	{
-		console.log("FO.Request json-p " + this._cb_id + " timeout");
+            var status = xhr.status;
 
-		delete fo_jsonp_callbacks[this._cb_id];
-		var script = document.getElementById(this._script_id);
-		script.parentNode.removeChild(script);
-		this._cb_id = null;
-		this._script_id = null;
-	}
-}
+            if (status) {
+                var result;
+                try {
+                    result = JSON.parse(xhr.responseText);
+                } catch (e) {
+                    result = {};
+                }
+                this._finished(status, result);
+            } else {
+                this._error(0);
+            }
+        }
+    };
+    Request.prototype._jsonp_callback = function (result) {
+        console.log("PollDance.Request json-p " + this._callbackInfo.id + " finished");
 
-FO.Request.prototype._xhr_readystatechange = function()
-{
-	if(this._xhr.readyState === 4)
-	{
-		clearTimeout(this._timer);
-		this._timer = null;
+        window.clearTimeout(this._timer);
+        this._timer = null;
 
-		var status = this._xhr.status;
-		var responseText = this._xhr.responseText;
-		this._xhr = null;
+        this._removeJsonpCallback(this._callbackInfo);
+        this._callbackInfo = null;
 
-		if(status)
-		{
-			var result;
+        this._finished(result.status, result.value);
+    };
+    Request.prototype._timeout = function () {
+        this._timer = null;
+        this._cancelreq();
+        this._error(1);
+    };
+    Request.prototype._finished = function (code, result) {
+        this._events.trigger('finished', this, code, result);
+    };
+    Request.prototype._error = function (reason) {
+        this._events.trigger('error', this, reason);
+    };
 
-			try
-			{
-				result = JSON.parse(responseText);
-			}
-			catch(e)
-			{
-				result = {}
-			}
+    var pollDance = {
+        Request: Request,
+        _getJsonpCallback: function (id) {
+            return JsonCallbacks.getJsonpCallback(id);
+        }
+    };
 
-			this._finished(status, result);
-		}
-		else
-			this._error(0);
-	}
-}
+    window.PollDance = window.PollDance || pollDance;
 
-FO.Request.prototype._jsonp_callback = function(result)
-{
-	console.log("FO.Request json-p " + this._cb_id + " finished");
-
-	clearTimeout(this._timer);
-	this._timer = null;
-
-	delete fo_jsonp_callbacks[this._cb_id];
-	var script = document.getElementById(this._script_id);
-	script.parentNode.removeChild(script);
-	this._cb_id = null;
-	this._script_id = null;
-
-	this._finished(result.status, result.value);
-}
-
-FO.Request.prototype._timeout = function()
-{
-	this._timer = null;
-	this._cancelreq();
-	this._error(1);
-}
-
-FO.Request.prototype._finished = function(code, result)
-{
-	if(this.onFinished)
-		this.onFinished(code, result);
-}
-
-FO.Request.prototype._error = function(reason)
-{
-	if(this.onError)
-		this.onError(reason);
-}
+})(window);
