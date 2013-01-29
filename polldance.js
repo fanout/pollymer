@@ -183,15 +183,15 @@
 
             var paramList = [];
 
-            paramList.push("callback=" + encodeURIComponent("PollDance._getJsonpCallback(\"" + this._callbackInfo.id + "\")"));
+            paramList.push("_callback=" + encodeURIComponent("PollDance._getJsonpCallback(\"" + this._callbackInfo.id + "\")"));
             if (self._method != "GET") {
-                paramList.push("method=" + encodeURIComponent(self._method));
+                paramList.push("_method=" + encodeURIComponent(self._method));
             }
             if (self._headers) {
-                paramList.push("headers=" + encodeURIComponent(JSON.stringify(self._headers)));
+                paramList.push("_headers=" + encodeURIComponent(JSON.stringify(self._headers)));
             }
             if (self._body) {
-                paramList.push("body=" + encodeURIComponent(self._body));
+                paramList.push("_body=" + encodeURIComponent(self._body));
             }
             var params = paramList.join("&");
 
