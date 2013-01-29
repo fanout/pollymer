@@ -1,0 +1,57 @@
+PollDance
+---------
+Date: January 28th, 2013
+Authors: Justin Karneges <justin@fanout.io>
+         Katsuyuki Ohmuro <harmony7@pex2.jp>
+
+PollDance is a general purpose AJAX library, implementing multiple transports
+to ensure cross-domain access works in all major browsers. It also provides
+conveniences for long-polling applications such as retries, exponential
+backoff between requests, and randomized request delaying.
+
+Dependencies:
+
+  json2.js
+
+Available Transports:
+
+  XmlHttpRequest - for all modern CORS browsers
+  JSON-P - for IE7, IE8, IE9, and older versions of other browsers
+
+Limitations:
+
+  - Responses from the server must be in JSON format. This library will parse
+    the data and return an object to the application.
+  - If the JSON-P transport is used, the request headers and body are subject
+    to URI length limitations of the browser and server.
+  - It is not possible to inspect the headers of a response.
+
+Usage:
+
+  var req = new PollDance.Request();
+  req.on('finished', function(code, result) { ... });
+  req.on('error', function(reason) { ... });
+  var headers = { ... };
+  var body = 'some data';
+  req.start('POST', 'http://example.com/path', headers, body);
+
+JSON-P Protocol:
+
+  This library supports JSON-P by supplying the following query string
+  parameters in the request:
+
+  callback: the JavaScript function to call in the response
+  method: the method name (default GET)
+  headers: additional headers encoded as JSON (default none)
+  body: request body (default empty)
+
+  This protocol dictates that the presence of the "callback" parameter
+  signifies the request as a JSON-P request. The remaining parameters are
+  optional.
+
+  The server is expected to reply with a JSON object of the form:
+
+    {
+      "status": code,
+      "value": object
+    }
