@@ -93,8 +93,7 @@
 
     var ErrorTypes = {
         "TransportError": 0,
-        "FormatError": 1,
-        "TimeoutError": 2
+        "TimeoutError": 1
     };
 
     var TransportTypes = {
@@ -296,8 +295,7 @@
              try {
                  result = JSON.parse(body);
              } catch (e) {
-                 this._error(ErrorTypes.FormatError);
-                 return;
+                 result = body;
              }
          }
          this._finished(code, result, headers);
