@@ -176,7 +176,7 @@
 
             self._xhr.send(self._body);
 
-            console.log("PollDance.Request start: " + self._url + " " + body);
+            console.log("PollDance.Request start: " + self._url + " " + self._body);
 
         } else { // Jsonp
 
@@ -288,7 +288,7 @@
 
         this._handle_response(result.code, result.status, headers, result.body);
     };
-    Request.prototype._handle_response(code, status, headers, body) {
+    Request.prototype._handle_response = function (code, status, headers, body) {
          var result;
          if (this.rawResponse) {
              result = body;
