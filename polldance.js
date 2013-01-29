@@ -7,9 +7,7 @@
         window.console = { log: function () { }, dir: function () { } };
     }
 
-    // PollDance.Request has on('finished', int code, object result) and on('error', int reason) callback members
-    // error reasons: 0=http, 1=timeout
-    // note: failed json parse on http body results in empty object {}, not error
+    // PollDance.Request has on('finished', int code, object result, object headers) and on('error', int reason) callback members
 
     var JsonCallbacks = {
         id: 0,
@@ -35,7 +33,7 @@
         newCallbackInfo: function () {
             var callbackInfo = {
                 id: "cb-" + this.id,
-                scriptId: "fo-jsonp-script-" + this.id
+                scriptId: "pd-jsonp-script-" + this.id
             };
             this.id++;
             return callbackInfo;
@@ -93,63 +91,116 @@
         }
     };
 
+    var ErrorTypes = {
+        "TransportError": 0,
+        "FormatError": 1,
+        "TimeoutError": 2
+    };
+
     var TransportTypes = {
         "Auto": 0,
         "Xhr": 1,
-        "Xdr": 2,
-        "Jsonp": 3
+        "Jsonp": 2
     };
 
-    var Request = function () {
+    var Request = function (config) {
         if (!(this instanceof Request)) {
             throw new Error("Constructor called as a function");
         }
+
         this._events = new Events();
+        this._delayNext = false;
+
+        this.rawResponse = false;
+        this.maxTries = 1;
+        this.maxDelay = 1000;
+
+        if (config !== undefined) {
+            if (config.transport !== undefined)
+                this.transport = config.transport;
+            if (config.rawResponse !== undefined)
+                this.rawResponse = config.rawResponse;
+            if (config.maxTries !== undefined)
+                this.maxTries = config.maxTries;
+            if (config.maxDelay !== undefined)
+                this.maxDelay = config.maxDelay;
+        }
     };
     Request.prototype.transport = TransportTypes.Auto;
     Request.prototype.start = function (method, url, headers, body) {
         var self = this;
+
+        self._tries = 0;
+
+        var delaytime;
+        if (self._delayNext) {
+            self._delayNext = false;
+            delaytime = Math.floor(Math.random() * self.maxDelay);
+            console.log("polling again in " + delaytime + "ms");
+        } else {
+            delaytime = 0; // always queue the call, to prevent browser "busy"
+        }
+
+        self._method = method;
+        self._url = url;
+        self._headers = headers;
+        self._body = body;
+
+        self._timer = setTimeout(function() { self._connect(); }, delaytime);
+    };
+    Request.prototype._connect = function () {
+        var self = this;
         self._timer = window.setTimeout(function () { self._timeout(); }, TIMEOUT);
 
-        if (corsAvailable) {
+        ++self._tries;
+
+        if (self.transport == TransportTypes.Auto) {
+            if (corsAvailable) {
+                self.transport = TransportTypes.Xhr;
+            } else {
+                self.transport = TransportTypes.Jsonp;
+            }
+        }
+
+        if (self.transport == TransportTypes.Xhr) {
 
             self._xhr = new XMLHttpRequest();
             self._xhr.onreadystatechange = function () { self._xhr_readystatechange(); };
-            self._xhr.open(method, url, true);
+            self._xhr.open(self._method, self._url, true);
 
-            for (var key in headers) {
-                if (headers.hasOwnProperty(key)) {
-                    self._xhr.setRequestHeader(key, headers[key]);
+            for (var key in self._headers) {
+                if (self._headers.hasOwnProperty(key)) {
+                    self._xhr.setRequestHeader(key, self._headers[key]);
                 }
             }
 
-            self._xhr.send(body);
+            self._xhr.send(self._body);
 
-            console.log("PollDance.Request start: " + url + " " + body);
+            console.log("PollDance.Request start: " + self._url + " " + body);
 
-        } else {
+        } else { // Jsonp
 
             this._callbackInfo = JsonCallbacks.newCallbackInfo();
 
             var paramList = [];
 
             paramList.push("callback=" + encodeURIComponent("PollDance._getJsonpCallback(\"" + this._callbackInfo.id + "\")"));
-            if (method != "GET") {
-                paramList.push("method=" + encodeURIComponent(method));
+            if (self._method != "GET") {
+                paramList.push("method=" + encodeURIComponent(self._method));
             }
-            if (headers) {
-                paramList.push("headers=" + encodeURIComponent(JSON.stringify(headers)));
+            if (self._headers) {
+                paramList.push("headers=" + encodeURIComponent(JSON.stringify(self._headers)));
             }
-            if (body) {
-                paramList.push("body=" + encodeURIComponent(body));
+            if (self._body) {
+                paramList.push("body=" + encodeURIComponent(self._body));
             }
             var params = paramList.join("&");
 
             var src;
-            if (url.indexOf("?") != -1) {
-                src = url + "&" + params;
+            if (self._url.indexOf("?") != -1) {
+                src = self._url + "&" + params;
             } else {
-                src = url + "?" + params;
+                src = self._url + "?" + params;
             }
 
             console.log("PollDance.Request json-p " + this._callbackInfo.id + " " + src);
@@ -185,11 +236,11 @@
         script.parentNode.removeChild(script);
     };
     Request.prototype._cancelreq = function () {
-        if (corsAvailable) {
+        if (this.transport == TransportTypes.Xhr) {
             this._xhr.onreadystatechange = function () { }
             this._xhr.abort();
             this._xhr = null;
-        } else {
+        } else { // Jsonp
             console.log("PollDance.Request json-p " + this._callbackInfo.id + " cancel");
             this._removeJsonpCallback(this._callbackInfo);
             this._callbackInfo = null;
@@ -203,18 +254,19 @@
             window.clearTimeout(this._timer);
             this._timer = null;
 
-            var status = xhr.status;
-
-            if (status) {
-                var result;
-                try {
-                    result = JSON.parse(xhr.responseText);
-                } catch (e) {
-                    result = {};
+            if (xhr.status) {
+                if (xhr.status >= 500 && xhr.status <= 599 && (this.maxTries == -1 || this._tries < this.maxTries)) {
+                    this._retry();
+                } else {
+                    // TODO: xhr.getAllResponseHeaders()
+                    this._handle_response(xhr.status, xhr.statusText, {}, xhr.responseText);
                 }
-                this._finished(status, result);
             } else {
-                this._error(0);
+                if (this.maxTries == -1 || this._tries < this.maxTries) {
+                    this._retry();
+                } else {
+                    this._error(ErrorTypes.TransportError);
+                }
             }
         }
     };
@@ -227,17 +279,59 @@
         this._removeJsonpCallback(this._callbackInfo);
         this._callbackInfo = null;
 
-        this._finished(result.status, result.value);
+        var headers;
+        if (result.headers !== undefined) {
+            headers = result.headers;
+        } else {
+            headers = {};
+        }
+
+        this._handle_response(result.code, result.status, headers, result.body);
+    };
+    Request.prototype._handle_response(code, status, headers, body) {
+         var result;
+         if (this.rawResponse) {
+             result = body;
+         } else {
+             try {
+                 result = JSON.parse(body);
+             } catch (e) {
+                 this._error(ErrorTypes.FormatError);
+                 return;
+             }
+         }
+         this._finished(code, result, headers);
     };
     Request.prototype._timeout = function () {
         this._timer = null;
         this._cancelreq();
-        this._error(1);
+
+        if (this.maxTries == -1 || this._tries < this.maxTries) {
+            this._retry();
+        } else {
+            this._error(ErrorTypes.TimeoutError);
+        }
     };
-    Request.prototype._finished = function (code, result) {
-        this._events.trigger('finished', this, code, result);
+    Request.prototype._retry = function() {
+        if (this._tries === 1) {
+            this._retryTime = 1;
+        } else if (this._tries < 8) {
+            this._retryTime = this._retryTime * 2;
+        }
+
+        var delaytime = this._retryTime * 1000;
+        delaytime += Math.floor(Math.random() * self.maxDelay);
+        console.log("trying again in " + delaytime + "ms");
+
+        var self = this;
+        self._timer = setTimeout(function() { self._connect(); }, delaytime);
+    };
+    Request.prototype._finished = function (code, result, headers) {
+        this._delayNext = true;
+        this._events.trigger('finished', this, code, result, headers);
     };
     Request.prototype._error = function (reason) {
+        this._delayNext = true;
         this._events.trigger('error', this, reason);
     };
 

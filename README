@@ -4,10 +4,11 @@ Date: January 28th, 2013
 Authors: Justin Karneges <justin@fanout.io>
          Katsuyuki Ohmuro <harmony7@pex2.jp>
 
-PollDance is a general purpose AJAX library, implementing multiple transports
+PollDance is a general-purpose AJAX library, implementing multiple transports
 to ensure cross-domain access works in all major browsers. It also provides
 conveniences for long-polling applications such as retries, exponential
-backoff between requests, and randomized request delaying.
+backoff between requests, randomized request delaying, and workarounds for
+browser "busy" indications.
 
 Dependencies:
 
@@ -29,27 +30,28 @@ Limitations:
 Usage:
 
   var req = new PollDance.Request();
-  req.on('finished', function(code, result) { ... });
+  req.on('finished', function(code, result, headers) { ... });
   req.on('error', function(reason) { ... });
   var headers = { ... };
   var body = 'some data';
+  req.maxTries = 2; // try twice
   req.start('POST', 'http://example.com/path', headers, body);
 
-Non-JSON results:
+Non-JSON Results:
 
   By default, this library will parse response body data as JSON and return an
-  object to the application. Call setRawResponse(true) to disable this
-  behavior and have a string returned instead.
+  object to the application. Set the rawResponse property to true to disable
+  this behavior and have a string returned instead.
 
-Polling:
+Polling and Retries:
 
-  Call setAttempts(number) to enable multiple request attempts, with
-  exponential backoff. Pass -1 to indicate infinite attempts. Transport
-  errors or HTTP responses in the 5xx range will cause a retry to occur. Any
-  other error will be returned to the application. Request objects may be
-  reused. If reused, a random delay is inserted before starting the next
-  request. By default this is a value between 0-1000ms. Call setMaxDelay(ms)
-  to change the upper bound.
+  Set the maxTries property to enable multiple request attempts, with
+  exponential backoff. Set maxTries to -1 to indicate infinite attempts.
+  Transport errors or HTTP responses in the 5xx range will cause a retry to
+  occur. Any other error will be returned to the application. Request objects
+  may be reused. If reused, a random delay is inserted before starting the
+  next request. By default this is a value between 0-1000ms. Set the maxDelay
+  property to change the upper bound.
 
 JSON-P Protocol:
 
