@@ -42,6 +42,13 @@
 
     var corsAvailable = "withCredentials" in new XMLHttpRequest();
 
+    function sameOrigin(url) {
+        var loc = window.location;
+        var a = document.createElement('a');
+        a.href = url;
+        return !a.hostname || (a.hostname == loc.hostname && a.port == loc.port && a.protocol == loc.protocol);
+    }
+
     var Events = function () {
         this._events = {};
     };
@@ -157,7 +164,7 @@
         ++self._tries;
 
         if (self.transport == TransportTypes.Auto) {
-            if (corsAvailable) {
+            if (corsAvailable || sameOrigin(self._url)) {
                 self.transport = TransportTypes.Xhr;
             } else {
                 self.transport = TransportTypes.Jsonp;
