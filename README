@@ -20,11 +20,11 @@ Available Transports:
 
 Limitations:
 
-  - Responses from the server must be in JSON format. This library will parse
-    the data and return an object to the application.
   - If the JSON-P transport is used, the request headers and body are subject
     to URI length limitations of the browser and server.
-  - It is not possible to inspect the headers of a response.
+  - If the JSON-P transport is used, it may not be possible to inspect all of
+    the response headers. At most, the server may provide "noteworthy" headers
+    within the JSON-P encoding.
 
 Usage:
 
@@ -35,23 +35,50 @@ Usage:
   var body = 'some data';
   req.start('POST', 'http://example.com/path', headers, body);
 
+Non-JSON results:
+
+  By default, this library will parse response body data as JSON and return an
+  object to the application. Call setRawResponse(true) to disable this
+  behavior and have a string returned instead.
+
+Polling:
+
+  Call setRequestAttempts(number) to enable multiple request attempts, with
+  exponential backoff. Pass -1 to indicate infinite attempts. Transport
+  errors or HTTP responses in the 5xx range will cause a retry to occur. Any
+  other error will be returned to the application. Request objects may be
+  reused. If reused, a random delay is inserted before starting the next
+  request. By default this is a value between 0-1000ms. Call setMaxDelay(ms)
+  to change the upper bound.
+
 JSON-P Protocol:
 
   This library supports JSON-P by supplying the following query string
   parameters in the request:
 
-  callback: the JavaScript function to call in the response
-  method: the method name (default GET)
-  headers: additional headers encoded as JSON (default none)
-  body: request body (default empty)
+  _callback: the JavaScript function to call in the response script
+  _method: the method name (default GET)
+  _headers: additional headers encoded as JSON (default none)
+  _body: request body (default empty)
 
   This protocol dictates that the presence of the "callback" parameter
   signifies the request as a JSON-P request. The remaining parameters are
   optional.
 
-  The server is expected to reply with a JSON object of the form:
+  The server is expected to reply with a JSON object with fields:
 
-    {
-      "status": code,
-      "value": object
-    }
+  code: the HTTP response code
+  status: the HTTP response status
+  headers: any noteworthy HTTP response headers (default none)
+  body: response body
+
+  All fields are required except for "headers". Example response:
+
+  {
+    "code": 200,
+    "status": "OK",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "{ \"foo\": \"bar\" }"
+  }
