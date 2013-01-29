@@ -135,7 +135,7 @@
         if (self._delayNext) {
             self._delayNext = false;
             delaytime = Math.floor(Math.random() * self.maxDelay);
-            console.log("polling again in " + delaytime + "ms");
+            console.log("PD: polling again in " + delaytime + "ms");
         } else {
             delaytime = 0; // always queue the call, to prevent browser "busy"
         }
@@ -146,6 +146,9 @@
         self._body = body;
 
         self._timer = setTimeout(function() { self._connect(); }, delaytime);
+    };
+    Request.prototype.retry = function () {
+        this._retry();
     };
     Request.prototype._connect = function () {
         var self = this;
@@ -175,7 +178,7 @@
 
             self._xhr.send(self._body);
 
-            console.log("PollDance.Request start: " + self._url + " " + self._body);
+            console.log("PD: xhr " + self._url + " " + self._body);
 
         } else { // Jsonp
 
@@ -202,7 +205,7 @@
                 src = self._url + "?" + params;
             }
 
-            console.log("PollDance.Request json-p " + this._callbackInfo.id + " " + src);
+            console.log("PD: json-p " + this._callbackInfo.id + " " + src);
             this._addJsonpCallback(this._callbackInfo, src);
         }
     };
@@ -240,7 +243,7 @@
             this._xhr.abort();
             this._xhr = null;
         } else { // Jsonp
-            console.log("PollDance.Request json-p " + this._callbackInfo.id + " cancel");
+            console.log("PD: json-p " + this._callbackInfo.id + " cancel");
             this._removeJsonpCallback(this._callbackInfo);
             this._callbackInfo = null;
         }
@@ -270,7 +273,7 @@
         }
     };
     Request.prototype._jsonp_callback = function (result) {
-        console.log("PollDance.Request json-p " + this._callbackInfo.id + " finished");
+        console.log("PD: json-p " + this._callbackInfo.id + " finished");
 
         window.clearTimeout(this._timer);
         this._timer = null;
@@ -318,8 +321,8 @@
         }
 
         var delaytime = this._retryTime * 1000;
-        delaytime += Math.floor(Math.random() * self.maxDelay);
-        console.log("trying again in " + delaytime + "ms");
+        delaytime += Math.floor(Math.random() * this.maxDelay);
+        console.log("PD: trying again in " + delaytime + "ms");
 
         var self = this;
         self._timer = setTimeout(function() { self._connect(); }, delaytime);
