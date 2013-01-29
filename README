@@ -43,7 +43,7 @@ Non-JSON results:
 
 Polling:
 
-  Call setRequestAttempts(number) to enable multiple request attempts, with
+  Call setAttempts(number) to enable multiple request attempts, with
   exponential backoff. Pass -1 to indicate infinite attempts. Transport
   errors or HTTP responses in the 5xx range will cause a retry to occur. Any
   other error will be returned to the application. Request objects may be
