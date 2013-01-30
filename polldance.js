@@ -1,5 +1,5 @@
 /*
- * PollDance JavaScript library
+ * PollDance JavaScript Library v1.0.0
  * Copyright 2013 Fan Out Networks, Inc.
  * Released under the MIT license (see COPYING file in source distribution)
  */
