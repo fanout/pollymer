@@ -1,3 +1,8 @@
+/*
+ * PollDance JavaScript library
+ * Copyright 2013 Fan Out Networks, Inc.
+ * Released under the MIT license (see COPYING file in source distribution)
+ */
 (function (window, undefined) {
 
     var TIMEOUT = 60000;
