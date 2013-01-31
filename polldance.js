@@ -4,7 +4,7 @@
  * Released under the MIT license (see COPYING file in source distribution)
  */
 (function () {
-var DEBUG = true;
+/** @define {boolean} */ var DEBUG = true;
 "use strict";
 (function (window, undefined) {
 
