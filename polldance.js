@@ -4,8 +4,8 @@
  * Released under the MIT license (see COPYING file in source distribution)
  */
 (function () {
-/** @define {boolean} */ var DEBUG = true;
 "use strict";
+var DEBUG = true;
 (function (window, undefined) {
 
     var NAMESPACE = "PollDance";
@@ -48,6 +48,24 @@
         }
     };
 
+    var parseResponseHeaders = function(headerStr) {
+        var headers = {};
+        if (!headerStr) {
+            return headers;
+        }
+        var headerPairs = headerStr.split('\u000d\u000a');
+        for (var i = 0; i < headerPairs.length; i++) {
+            var headerPair = headerPairs[i];
+            var index = headerPair.indexOf('\u003a\u0020');
+            if (index > 0) {
+                var key = headerPair.substring(0, index);
+                var val = headerPair.substring(index + 2);
+                headers[key] = val;
+            }
+        }
+        return headers;
+    };
+    
     var jsonCallbacks = {
         id: 0,
         requests: {},
@@ -308,8 +326,9 @@
                 this._retry();
             } else {
                 if (xhr.status) {
-                    // TODO: xhr.getAllResponseHeaders()
-                    this._handle_response(xhr.status, xhr.statusText, {}, xhr.responseText);
+                    var headersStr = xhr.getAllResponseHeaders();
+                    var headers = parseResponseHeaders(headersStr);
+                    this._handle_response(xhr.status, xhr.statusText, headers, xhr.responseText);
                 } else {
                     this._error(errorTypes.TransportError);
                 }
