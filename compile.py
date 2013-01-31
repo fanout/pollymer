@@ -5,9 +5,7 @@ import httplib, urllib, sys
 # Define the parameters for the POST request and encode them in
 # a URL-safe format.
 
-file = open(sys.argv[1])
-js_code = file.read()
-file.close()
+js_code = sys.stdin.read()
 
 params = urllib.urlencode([
     ('js_code', js_code),
