@@ -1,4 +1,4 @@
-/*
+/**
  * PollDance JavaScript Library v1.0.0
  * Copyright 2013 Fan Out Networks, Inc.
  * Released under the MIT license (see COPYING file in source distribution)
@@ -10,28 +10,28 @@ var DEBUG = true;
 
     var NAMESPACE = "PollDance";
     var TIMEOUT = 60000;
-    var emptyMethod = function(){};
+    var emptyMethod = function () { };
 
-    var consoleinfo;
-    var consoleerror;
+    var consoleInfo;
+    var consoleError;
     if (DEBUG) {
         // don't break if there's no console
         if (typeof (window.console) === "undefined") {
-            window.console = { log: emptyMethod, error: emptyMethod };
+            window.console = { info: emptyMethod, error: emptyMethod };
         }
-        consoleinfo = function(output) { window.console.info(output); };
-        consoleerror = function (output) { window.console.error(output); };
+        consoleInfo = function (output) { window.console.info(output); };
+        consoleError = function (output) { window.console.error(output); };
     } else {
-        consoleinfo = emptyMethod;
-        consoleerror = emptyMethod;
+        consoleInfo = emptyMethod;
+        consoleError = emptyMethod;
     }
 
-    var copyArray = function(array) {
+    var copyArray = function (array) {
         var args = Array.prototype.slice.call(arguments, 1);
         return Array.prototype.slice.apply(array, args);
     };
 
-    var indexOfItemInArray = function(array, item) {
+    var indexOfItemInArray = function (array, item) {
         for (var i = 0, length = array.length; i < length; i++) {
             if (array[i] === item) {
                 return i;
@@ -51,7 +51,7 @@ var DEBUG = true;
         }
     };
 
-    var parseResponseHeaders = function(headerStr) {
+    var parseResponseHeaders = function (headerStr) {
         var headers = {};
         if (!headerStr) {
             return headers;
@@ -62,27 +62,26 @@ var DEBUG = true;
             var index = headerPair.indexOf('\u003a\u0020');
             if (index > 0) {
                 var key = headerPair.substring(0, index);
-                var val = headerPair.substring(index + 2);
-                headers[key] = val;
+                headers[key] = headerPair.substring(index + 2);
             }
         }
         return headers;
     };
 
-    var addJsonpScriptToDom = function(src, scriptId) {
+    var addJsonpScriptToDom = function (src, scriptId) {
         var script = window.document.createElement("script");
         script.type = "text/javascript";
         script.id = scriptId;
         script.src = src;
-        
+
         var head = window.document.getElementsByTagName("head")[0];
         head.appendChild(script);
     };
-    var removeJsonpScriptFromDom = function(scriptId) {
+    var removeJsonpScriptFromDom = function (scriptId) {
         var script = window.document.getElementById(scriptId);
         script.parentNode.removeChild(script);
     };
-    
+
     var jsonCallbacks = {
         id: 0,
         requests: {},
@@ -90,9 +89,9 @@ var DEBUG = true;
             var cb;
             var requests = this.requests;
             if (id in this.requests) {
-                cb = function (result) { requests[id]._jsonp_callback(result); };
+                cb = function (result) { requests[id]._jsonpCallback(result); };
             } else {
-                consoleinfo("no callback with id " + id);
+                consoleInfo("no callback with id " + id);
                 cb = emptyMethod;
             }
             return cb;
@@ -115,7 +114,7 @@ var DEBUG = true;
 
     var corsAvailable = "withCredentials" in new window.XMLHttpRequest();
 
-    var sameOrigin = function(url) {
+    var sameOrigin = function (url) {
         var loc = window.location;
         var a = window.document.createElement('a');
         a.href = url;
@@ -135,7 +134,7 @@ var DEBUG = true;
         }
         return transport;
     };
-    
+
     var Events = function () {
         this._events = {};
     };
@@ -184,7 +183,7 @@ var DEBUG = true;
 
     var Request = function () {
         if (!(this instanceof Request)) {
-            throw new Error("Constructor called as a function");
+            throw new window.Error("Constructor called as a function");
         }
 
         this._events = new Events();
@@ -228,7 +227,7 @@ var DEBUG = true;
     };
     Request.prototype.start = function (method, url, headers, body) {
         if (this._timer != null) {
-            consoleerror("PD: start() called on a Request object that is currently running.");
+            consoleError("PD: start() called on a Request object that is currently running.");
             return;
         }
 
@@ -238,14 +237,14 @@ var DEBUG = true;
         this._body = body;
         this._start();
     };
-    Request.prototype._start = function() {
+    Request.prototype._start = function () {
         this._tries = 0;
 
         var delayTime;
         if (this._delayNext) {
             this._delayNext = false;
             delayTime = Math.floor(Math.random() * this.maxDelay);
-            consoleinfo("PD: polling again in " + delayTime + "ms");
+            consoleInfo("PD: polling again in " + delayTime + "ms");
         } else {
             delayTime = 0; // always queue the call, to prevent browser "busy"
         }
@@ -254,11 +253,11 @@ var DEBUG = true;
     };
     Request.prototype.retry = function () {
         if (this._tries == 0) {
-            consoleerror("PD: retry() called on a Request object that has never been started.");
+            consoleError("PD: retry() called on a Request object that has never been started.");
             return;
         }
         if (this._timer != null) {
-            consoleerror("PD: retry() called on a Request object that is currently running.");
+            consoleError("PD: retry() called on a Request object that is currently running.");
             return;
         }
         this._retry();
@@ -272,15 +271,15 @@ var DEBUG = true;
 
         var delayTime = this._retryTime * 1000;
         delayTime += Math.floor(Math.random() * this.maxDelay);
-        consoleinfo("PD: trying again in " + delayTime + "ms");
+        consoleInfo("PD: trying again in " + delayTime + "ms");
 
         this._initiate(delayTime);
     };
     Request.prototype._initiate = function (delayMsecs) {
         var self = this;
-        self._timer = window.setTimeout(function () { self._connect(); }, delayMsecs);
+        self._timer = window.setTimeout(function () { self._startConnect(); }, delayMsecs);
     };
-    Request.prototype._connect = function () {
+    Request.prototype._startConnect = function () {
         var self = this;
         this._timer = window.setTimeout(function () { self._timeout(); }, TIMEOUT);
 
@@ -297,13 +296,27 @@ var DEBUG = true;
         this._transport = chooseTransport(this.transport, url);
 
         if (this._transport == transportTypes.Xhr) {
-            this._xhr = this._xhr_start(method, url, headers, body);
+            this._xhr = this._startXhr(method, url, headers, body);
         } else { // Jsonp
-            this._jsonp = this._jsonp_start(method, url, headers, body);
+            this._jsonp = this._startJsonp(method, url, headers, body);
+        }
+    };
+    Request.prototype._cleanupConnect = function (abort) {
+        window.clearTimeout(this._timer);
+        this._timer = null;
+
+        if (this._transport == transportTypes.Xhr) {
+            consoleInfo("PD: XHR cleanup");
+            this._cleanupXhr(this._xhr, abort);
+            this._xhr = null;
+        } else { // Jsonp
+            consoleInfo("PD: json-p " + this._jsonp.id + " cleanup");
+            this._cleanupJsonp(this._jsonp, abort);
+            this._jsonp = null;
         }
     };
     Request.prototype.abort = function () {
-        this._cleanup(true);
+        this._cleanupConnect(true);
     };
     Request.prototype.on = function (type, handler) {
         this._events.on(type, handler);
@@ -312,10 +325,10 @@ var DEBUG = true;
         var args = copyArray(arguments, 1).unshift(type);
         this._events.off.apply(this._events, args);
     };
-    Request.prototype._xhr_start = function(method, url, headers, body) {
+    Request.prototype._startXhr = function (method, url, headers, body) {
         var xhr = new window.XMLHttpRequest();
         var self = this;
-        xhr.onreadystatechange = function () { self._xhr_callback(); };
+        xhr.onreadystatechange = function () { self._xhrCallback(); };
         xhr.open(method, url, true);
 
         for (var key in headers) {
@@ -326,30 +339,32 @@ var DEBUG = true;
 
         xhr.send(body);
 
-        consoleinfo("PD: XHR start " + url);
+        consoleInfo("PD: XHR start " + url);
 
         return xhr;
     };
-    Request.prototype._xhr_cleanup = function(xhr, abort) {
-        xhr.onreadystatechange = emptyMethod;
-        if (abort) {
-            xhr.abort();
+    Request.prototype._cleanupXhr = function (xhr, abort) {
+        if (xhr != null) {
+            xhr.onreadystatechange = emptyMethod;
+            if (abort) {
+                xhr.abort();
+            }
         }
     };
-    Request.prototype._xhr_callback = function () {
+    Request.prototype._xhrCallback = function () {
         var xhr = this._xhr;
         if (xhr != null && xhr.readyState === 4) {
-            consoleinfo("PD: XHR finished");
+            consoleInfo("PD: XHR finished");
 
             var code = xhr.status;
             var status = xhr.statusText;
             var headers = parseResponseHeaders(xhr.getAllResponseHeaders());
             var body = xhr.responseText;
 
-            this._handle_response(code, status, headers, body);
+            this._handleResponse(code, status, headers, body);
         }
     };
-    Request.prototype._jsonp_start = function (method, url, headers, body) {
+    Request.prototype._startJsonp = function (method, url, headers, body) {
         var jsonp = jsonCallbacks.newCallbackInfo();
 
         var paramList = [
@@ -372,26 +387,28 @@ var DEBUG = true;
         jsonCallbacks.addJsonpCallback(jsonp.id, this);
         addJsonpScriptToDom(src, jsonp.scriptId);
 
-        consoleinfo("PD: json-p start " + jsonp.id + " " + src);
+        consoleInfo("PD: json-p start " + jsonp.id + " " + src);
 
         return jsonp;
     };
-    Request.prototype._jsonp_cleanup = function (jsonp, abort) {
-        jsonCallbacks.removeJsonpCallback(jsonp.id, this);
-        removeJsonpScriptFromDom(jsonp.scriptId);
+    Request.prototype._cleanupJsonp = function (jsonp, abort) {
+        if (jsonp != null) {
+            jsonCallbacks.removeJsonpCallback(jsonp.id, this);
+            removeJsonpScriptFromDom(jsonp.scriptId);
+        }
     };
-    Request.prototype._jsonp_callback = function (result) {
-        consoleinfo("PD: json-p " + this._jsonp.id + " finished");
+    Request.prototype._jsonpCallback = function (result) {
+        consoleInfo("PD: json-p " + this._jsonp.id + " finished");
 
         var code = ("code" in result) ? result.code : 0;
         var status = ("status" in result) ? result.status : null;
         var headers = ("headers" in result) ? result.headers : {};
         var body = ("body" in result) ? result.body : null;
 
-        this._handle_response(code, status, headers, body);
+        this._handleResponse(code, status, headers, body);
     };
-    Request.prototype._handle_response = function (code, status, headers, body) {
-        this._cleanup();
+    Request.prototype._handleResponse = function (code, status, headers, body) {
+        this._cleanupConnect();
 
         if ((code == 0 || (code >= 500 && code < 600)) &&
             (this.maxTries == -1 || this._tries < this.maxTries)) {
@@ -418,7 +435,7 @@ var DEBUG = true;
         }
     };
     Request.prototype._timeout = function () {
-        this._cleanup(true);
+        this._cleanupConnect(true);
 
         if (this.maxTries == -1 || this._tries < this.maxTries) {
             this._retry();
@@ -434,21 +451,7 @@ var DEBUG = true;
         this._delayNext = true;
         this._events.trigger('error', this, reason);
     };
-    Request.prototype._cleanup = function (abort) {
-        window.clearTimeout(this._timer);
-        this._timer = null;
 
-        if (this._transport == transportTypes.Xhr) {
-            consoleinfo("PD: XHR cleanup");
-            this._xhr_cleanup(this._xhr, abort);
-            this._xhr = null;
-        } else { // Jsonp
-            consoleinfo("PD: json-p " + this._jsonp.id + " cleanup");
-            this._jsonp_cleanup(this._jsonp, abort);
-            this._jsonp = null;
-        }
-    };
-    
     var exports = {
         Request: Request,
         TransportTypes: transportTypes,
