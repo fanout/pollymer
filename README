@@ -1,14 +1,14 @@
 PollDance
 ---------
-Date: January 28th, 2013
+Date: January 31st, 2013
 Authors: Justin Karneges <justin@fanout.io>
          Katsuyuki Ohmuro <harmony7@pex2.jp>
 
-PollDance is a general-purpose AJAX library, implementing multiple transports
-to ensure cross-domain access works in all major browsers. It also provides
-conveniences for long-polling applications such as retries, exponential
-backoff between requests, randomized request delaying, and workarounds for
-browser "busy" indications.
+PollDance is a general-purpose AJAX library that provides conveniences for
+long-polling applications, such as request retries, exponential backoff
+between requests, randomized request delaying, and workarounds for browser
+"busy" indications. It also implements multiple transports to ensure
+cross-domain access works in all major browsers.
 
 Dependencies:
 
@@ -16,8 +16,10 @@ Dependencies:
 
 Available Transports:
 
-  XmlHttpRequest - for all modern CORS browsers
-  JSON-P - for IE7, IE8, IE9, and older versions of other browsers
+  XmlHttpRequest - for same-origin requests on all browsers, and cross-origin
+    requests on modern CORS browsers
+  JSON-P - for cross-origin requests on older non-CORS browsers such as IE7,
+    IE8, IE9, and Opera < 12.00
 
 Limitations:
 
