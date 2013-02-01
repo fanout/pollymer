@@ -122,7 +122,7 @@ var DEBUG = true;
         return !a.hostname || (a.hostname == loc.hostname && a.port == loc.port && a.protocol == loc.protocol);
     };
 
-    var chooseTransport = function (transportType) {
+    var chooseTransport = function (transportType, url) {
         var transport;
         if (transportType == transportTypes.Auto) {
             if (corsAvailable || sameOrigin(url)) {
@@ -232,10 +232,10 @@ var DEBUG = true;
             return;
         }
 
-        self._method = method;
-        self._url = url;
-        self._headers = headers;
-        self._body = body;
+        this._method = method;
+        this._url = url;
+        this._headers = headers;
+        this._body = body;
         this._start();
     };
     Request.prototype._start = function() {
@@ -294,17 +294,12 @@ var DEBUG = true;
         // Create a copy of the transport because we don't want
         // to give public access to it (changing it between now and
         // cleanout would be a no-no)
-        this._transport = chooseTransport(this.transport);
+        this._transport = chooseTransport(this.transport, url);
 
         if (this._transport == transportTypes.Xhr) {
-
             this._xhr = this._xhr_start(method, url, headers, body);
-            consoleinfo("PD: xhr start");
-
         } else { // Jsonp
-
             this._jsonp = this._jsonp_start(method, url, headers, body);
-            consoleinfo("PD: json-p start " + this._jsonp.id + " " + src);
         }
     };
     Request.prototype.abort = function () {
@@ -330,6 +325,8 @@ var DEBUG = true;
         }
 
         xhr.send(body);
+
+        consoleinfo("PD: XHR start");
 
         return xhr;
     };
@@ -374,6 +371,8 @@ var DEBUG = true;
 
         jsonCallbacks.addJsonpCallback(jsonp.id, this);
         addJsonpScriptToDom(src, jsonp.scriptId);
+
+        consoleinfo("PD: json-p start " + jsonp.id + " " + src);
 
         return jsonp;
     };
@@ -440,11 +439,11 @@ var DEBUG = true;
         this._timer = null;
 
         if (this._transport == transportTypes.Xhr) {
-            consoleinfo("PD: XHR canceled");
+            consoleinfo("PD: XHR cleanup");
             this._xhr_cleanup(this._xhr, abort);
             this._xhr = null;
         } else { // Jsonp
-            consoleinfo("PD: json-p " + this._jsonp.id + " canceled");
+            consoleinfo("PD: json-p " + this._jsonp.id + " cleanup");
             this._jsonp_cleanup(this._jsonp, abort);
             this._jsonp = null;
         }
