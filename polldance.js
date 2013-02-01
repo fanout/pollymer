@@ -326,7 +326,7 @@ var DEBUG = true;
 
         xhr.send(body);
 
-        consoleinfo("PD: XHR start");
+        consoleinfo("PD: XHR start " + url);
 
         return xhr;
     };
