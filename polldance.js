@@ -357,18 +357,18 @@ var DEBUG = true;
             consoleInfo("PD: XHR finished");
 
             var code = xhr.status;
-            var status = xhr.statusText;
+            var reason = xhr.statusText;
             var headers = parseResponseHeaders(xhr.getAllResponseHeaders());
             var body = xhr.responseText;
 
-            this._handleResponse(code, status, headers, body);
+            this._handleResponse(code, reason, headers, body);
         }
     };
     Request.prototype._startJsonp = function (method, url, headers, body) {
         var jsonp = jsonCallbacks.newCallbackInfo();
 
         var paramList = [
-            "_callback=" + encodeURIComponent("window['" + NAMESPACE + "']._getJsonpCallback(\"" + jsonp.id + "\")")
+            "callback=" + encodeURIComponent("window['" + NAMESPACE + "']._getJsonpCallback(\"" + jsonp.id + "\")")
         ];
 
         if (method != "GET") {
@@ -401,13 +401,13 @@ var DEBUG = true;
         consoleInfo("PD: json-p " + this._jsonp.id + " finished");
 
         var code = ("code" in result) ? result.code : 0;
-        var status = ("status" in result) ? result.status : null;
+        var reason = ("reason" in result) ? result.reason : null;
         var headers = ("headers" in result) ? result.headers : {};
         var body = ("body" in result) ? result.body : null;
 
-        this._handleResponse(code, status, headers, body);
+        this._handleResponse(code, reason, headers, body);
     };
-    Request.prototype._handleResponse = function (code, status, headers, body) {
+    Request.prototype._handleResponse = function (code, reason, headers, body) {
         this._cleanupConnect();
 
         if ((code == 0 || (code >= 500 && code < 600)) &&

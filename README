@@ -141,7 +141,7 @@ JSON-P Protocol:
   This library supports JSON-P by supplying the following query string
   parameters in the request:
 
-  _callback: the JavaScript function to call in the response script
+  callback: the JavaScript function to call in the response script
   _method: the method name (default GET)
   _headers: additional headers encoded as JSON (default none)
   _body: request body (default empty)
@@ -152,8 +152,8 @@ JSON-P Protocol:
 
   The server is expected to reply with a JSON object with fields:
 
-  code: the HTTP response code
-  status: the HTTP response status
+  code: the HTTP response status code
+  reason: the HTTP response reason phrase
   headers: any noteworthy HTTP response headers (default none)
   body: response body
 
@@ -161,7 +161,7 @@ JSON-P Protocol:
 
   {
     "code": 200,
-    "status": "OK",
+    "reason": "OK",
     "headers": {
       "Content-Type": "application/json"
     },
