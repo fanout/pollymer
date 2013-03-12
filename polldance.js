@@ -292,7 +292,7 @@ var DEBUG = true;
 
         // Create a copy of the transport because we don't want
         // to give public access to it (changing it between now and
-        // cleanout would be a no-no)
+        // cleanup would be a no-no)
         this._transport = chooseTransport(this.transport, url);
 
         if (this._transport == transportTypes.Xhr) {
@@ -322,7 +322,8 @@ var DEBUG = true;
         this._events.on(type, handler);
     };
     Request.prototype.off = function (type) {
-        var args = copyArray(arguments, 1).unshift(type);
+        var args = copyArray(arguments, 1);
+        args.unshift(type);
         this._events.off.apply(this._events, args);
     };
     Request.prototype._startXhr = function (method, url, headers, body) {
@@ -393,7 +394,7 @@ var DEBUG = true;
     };
     Request.prototype._cleanupJsonp = function (jsonp, abort) {
         if (jsonp != null) {
-            jsonCallbacks.removeJsonpCallback(jsonp.id, this);
+            jsonCallbacks.removeJsonpCallback(jsonp.id);
             removeJsonpScriptFromDom(jsonp.scriptId);
         }
     };
