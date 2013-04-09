@@ -1,11 +1,11 @@
-PollDance
+PollingPlace
 ---------
 Date: January 31st, 2013
 Authors: Justin Karneges <justin@fanout.io>
          Katsuyuki Ohmuro <harmony7@pex2.jp>
 Mailing List: http://lists.fanout.io/listinfo.cgi/fanout-users-fanout.io
 
-PollDance is a general-purpose AJAX library that provides conveniences for
+PollingPlace is a general-purpose AJAX library that provides conveniences for
 long-polling applications, such as request retries, exponential backoff
 between requests, randomized request delaying, and workarounds for browser
 "busy" indications. It also implements multiple transports to ensure
@@ -32,7 +32,7 @@ Limitations:
 
 Usage:
 
-  var req = new PollDance.Request();
+  var req = new PollingPlace.Request();
   req.on('finished', function(code, result, headers) { ... });
   req.on('error', function(reason) { ... });
   var headers = { ... };
@@ -52,7 +52,7 @@ Methods of Request Object:
         result:  JSON object or string
         headers: hash of key/value strings
       'error': function(reason)
-        reason: PollDance.errorType
+        reason: PollingPlace.errorType
 
   off(event_name) - Remove callback for event
 
@@ -70,7 +70,7 @@ Methods of Request Object:
     (unless the recurring flag is set, see below). If called again on the same
     object, a short random delay will be added before performing the request.
 
-  retry() - Attempt the exact same request again. Normally, PollDance will
+  retry() - Attempt the exact same request again. Normally, PollingPlace will
     automatically retry a request that it considers to be a failure, but this
     method may be used if the application needs to retry the request for any
     another reason. Retries have an exponentially increasing delay between
@@ -85,7 +85,7 @@ Properties of Request Object:
   Properties are simple members of the object. They can be set directly:
     req.rawResponse = true;
   or passed in a hash during construction:
-    var req = new PollDance.Request({rawResponse: true});
+    var req = new PollingPlace.Request({rawResponse: true});
 
   rawResponse: boolean
     By default, this library will parse response body data as JSON and return
@@ -104,11 +104,11 @@ Properties of Request Object:
   recurring: boolean
     If set to true, then after a request finishes with a code between 200 and
     299, and the finished event has been raised, the same request will be
-    started again. This allows PollDance to automatically poll a resource
+    started again. This allows PollingPlace to automatically poll a resource
     endlessly. Pass a function as the url argument in order to be able to
     change the url between polls.
 
-  transport: PollDance.transportType
+  transport: PollingPlace.transportType
     Explicitly set the transport to use. Default is transportType.Auto, which
     automatically chooses the best transport when the request is started.
 
@@ -116,11 +116,11 @@ Retries:
 
   When a request fails at the transport level, or the request succeeds with an
   error code between 500 and 599, and maxTries has not been reached, then
-  PollDance will retry the request silently, with an exponentially increasing
+  PollingPlace will retry the request silently, with an exponentially increasing
   delay between attempts. In any other case, the request will succeed and
   the finished event will be raised. If the application determines that the
   response indicates a temporary error and should be retried with the same
-  backoff delay that PollDance normally uses, the retry() method may be used.
+  backoff delay that PollingPlace normally uses, the retry() method may be used.
 
 Request Reuse:
 
