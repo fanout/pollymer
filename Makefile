@@ -1,17 +1,17 @@
-VERSION = 1.0.0
+VERSION = 1.0.1
 
 all: dist
 
 distclean:
-	rm -f polldance-$(VERSION).js polldance-$(VERSION).min.js
+	rm -f polling-place-$(VERSION).js polling-place-$(VERSION).min.js
 
 clean:
 
-dist: polldance-$(VERSION).min.js
+dist: polling-place-$(VERSION).min.js
 
-polldance-$(VERSION).js: polldance.js
-	cp polldance.js polldance-$(VERSION).js
+polling-place-$(VERSION).js: polling-place.js
+	cp polling-place.js polling-place-$(VERSION).js
 
-polldance-$(VERSION).min.js: polldance-$(VERSION).js
-	sed -e "s/DEBUG = true/DEBUG = false/g" polldance-$(VERSION).js | ./compile.py > polldance-$(VERSION).min.js.tmp
-	mv polldance-$(VERSION).min.js.tmp polldance-$(VERSION).min.js
+polling-place-$(VERSION).min.js: polling-place-$(VERSION).js
+	sed -e "s/DEBUG = true/DEBUG = false/g" polling-place-$(VERSION).js | ./compile.py > polling-place-$(VERSION).min.js.tmp
+	mv polling-place-$(VERSION).min.js.tmp polling-place-$(VERSION).min.js
