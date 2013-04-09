@@ -1,6 +1,7 @@
 /**
- * PollDance JavaScript Library v1.0.0
+ * PollingPlace JavaScript Library v1.0.1
  * Copyright 2013 Fan Out Networks, Inc.
+ * Misogyny removed by @jeremybowers.
  * Released under the MIT license (see COPYING file in source distribution)
  */
 (function () {
