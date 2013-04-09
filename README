@@ -52,7 +52,7 @@ Methods of Request Object:
         result:  JSON object or string
         headers: hash of key/value strings
       'error': function(reason)
-        reason: PollDance.errorType
+        reason: PollingPlace.errorType
 
   off(event_name) - Remove callback for event
 
@@ -104,7 +104,7 @@ Properties of Request Object:
   recurring: boolean
     If set to true, then after a request finishes with a code between 200 and
     299, and the finished event has been raised, the same request will be
-    started again. This allows PollDance to automatically poll a resource
+    started again. This allows PollingPlace to automatically poll a resource
     endlessly. Pass a function as the url argument in order to be able to
     change the url between polls.
 
@@ -116,7 +116,7 @@ Retries:
 
   When a request fails at the transport level, or the request succeeds with an
   error code between 500 and 599, and maxTries has not been reached, then
-  PollDance will retry the request silently, with an exponentially increasing
+  PollingPlace will retry the request silently, with an exponentially increasing
   delay between attempts. In any other case, the request will succeed and
   the finished event will be raised. If the application determines that the
   response indicates a temporary error and should be retried with the same
