@@ -3,15 +3,15 @@ VERSION = 1.0.0
 all: dist
 
 distclean:
-	rm -f polldance-$(VERSION).js polldance-$(VERSION).min.js
+	rm -f pollymer-$(VERSION).js pollymer-$(VERSION).min.js
 
 clean:
 
-dist: polldance-$(VERSION).min.js
+dist: pollymer-$(VERSION).min.js
 
-polldance-$(VERSION).js: polldance.js
-	cp polldance.js polldance-$(VERSION).js
+pollymer-$(VERSION).js: pollymer.js
+	cp pollymer.js pollymer-$(VERSION).js
 
-polldance-$(VERSION).min.js: polldance-$(VERSION).js
-	sed -e "s/DEBUG = true/DEBUG = false/g" polldance-$(VERSION).js | ./compile.py > polldance-$(VERSION).min.js.tmp
-	mv polldance-$(VERSION).min.js.tmp polldance-$(VERSION).min.js
+pollymer-$(VERSION).min.js: pollymer-$(VERSION).js
+	sed -e "s/DEBUG = true/DEBUG = false/g" pollymer-$(VERSION).js | ./compile.py > pollymer-$(VERSION).min.js.tmp
+	mv pollymer-$(VERSION).min.js.tmp pollymer-$(VERSION).min.js

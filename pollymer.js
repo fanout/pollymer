@@ -1,5 +1,5 @@
 /**
- * PollDance JavaScript Library v1.0.0
+ * Pollymer JavaScript Library v1.0.0
  * Copyright 2013 Fan Out Networks, Inc.
  * Released under the MIT license (see COPYING file in source distribution)
  */
@@ -8,7 +8,7 @@
 var DEBUG = true;
 (function (window, undefined) {
 
-    var NAMESPACE = "PollDance";
+    var NAMESPACE = "Pollymer";
     var TIMEOUT = 60000;
     var emptyMethod = function () { };
 
@@ -177,7 +177,7 @@ var DEBUG = true;
         "Jsonp": 2
     };
 
-    // PollDance.Request has callback members:
+    // Pollymer.Request has callback members:
     // on('finished', int code, object result, object headers)
     // on('error', int reason)
 
@@ -227,7 +227,7 @@ var DEBUG = true;
     };
     Request.prototype.start = function (method, url, headers, body) {
         if (this._timer != null) {
-            consoleError("PD: start() called on a Request object that is currently running.");
+            consoleError("pollymer: start() called on a Request object that is currently running.");
             return;
         }
 
@@ -244,7 +244,7 @@ var DEBUG = true;
         if (this._delayNext) {
             this._delayNext = false;
             delayTime = Math.floor(Math.random() * this.maxDelay);
-            consoleInfo("PD: polling again in " + delayTime + "ms");
+            consoleInfo("pollymer: polling again in " + delayTime + "ms");
         } else {
             delayTime = 0; // always queue the call, to prevent browser "busy"
         }
@@ -253,11 +253,11 @@ var DEBUG = true;
     };
     Request.prototype.retry = function () {
         if (this._tries == 0) {
-            consoleError("PD: retry() called on a Request object that has never been started.");
+            consoleError("pollymer: retry() called on a Request object that has never been started.");
             return;
         }
         if (this._timer != null) {
-            consoleError("PD: retry() called on a Request object that is currently running.");
+            consoleError("pollymer: retry() called on a Request object that is currently running.");
             return;
         }
         this._retry();
@@ -271,7 +271,7 @@ var DEBUG = true;
 
         var delayTime = this._retryTime * 1000;
         delayTime += Math.floor(Math.random() * this.maxDelay);
-        consoleInfo("PD: trying again in " + delayTime + "ms");
+        consoleInfo("pollymer: trying again in " + delayTime + "ms");
 
         this._initiate(delayTime);
     };
@@ -306,11 +306,11 @@ var DEBUG = true;
         this._timer = null;
 
         if (this._transport == transportTypes.Xhr) {
-            consoleInfo("PD: XHR cleanup");
+            consoleInfo("pollymer: XHR cleanup");
             this._cleanupXhr(this._xhr, abort);
             this._xhr = null;
         } else { // Jsonp
-            consoleInfo("PD: json-p " + this._jsonp.id + " cleanup");
+            consoleInfo("pollymer: json-p " + this._jsonp.id + " cleanup");
             this._cleanupJsonp(this._jsonp, abort);
             this._jsonp = null;
         }
@@ -340,7 +340,7 @@ var DEBUG = true;
 
         xhr.send(body);
 
-        consoleInfo("PD: XHR start " + url);
+        consoleInfo("pollymer: XHR start " + url);
 
         return xhr;
     };
@@ -355,7 +355,7 @@ var DEBUG = true;
     Request.prototype._xhrCallback = function () {
         var xhr = this._xhr;
         if (xhr != null && xhr.readyState === 4) {
-            consoleInfo("PD: XHR finished");
+            consoleInfo("pollymer: XHR finished");
 
             var code = xhr.status;
             var reason = xhr.statusText;
@@ -388,7 +388,7 @@ var DEBUG = true;
         jsonCallbacks.addJsonpCallback(jsonp.id, this);
         addJsonpScriptToDom(src, jsonp.scriptId);
 
-        consoleInfo("PD: json-p start " + jsonp.id + " " + src);
+        consoleInfo("pollymer: json-p start " + jsonp.id + " " + src);
 
         return jsonp;
     };
@@ -399,7 +399,7 @@ var DEBUG = true;
         }
     };
     Request.prototype._jsonpCallback = function (result) {
-        consoleInfo("PD: json-p " + this._jsonp.id + " finished");
+        consoleInfo("pollymer: json-p " + this._jsonp.id + " finished");
 
         var code = ("code" in result) ? result.code : 0;
         var reason = ("reason" in result) ? result.reason : null;
