@@ -205,6 +205,7 @@ var DEBUG = true;
         this.maxTries = 1;
         this.maxDelay = 1000;
         this.recurring = false;
+        this.withCredentials = false;
 
         if (arguments.length > 0) {
             var config = arguments[0];
@@ -222,6 +223,9 @@ var DEBUG = true;
             }
             if ("recurring" in config) {
                 this.recurring = config.recurring;
+            }
+            if ("withCredentials" in config) {
+                this.withCredentials = config.withCredentials;
             }
         }
     };
@@ -328,6 +332,13 @@ var DEBUG = true;
     };
     Request.prototype._startXhr = function (method, url, headers, body) {
         var xhr = new window.XMLHttpRequest();
+
+        // If header has Authorization, and cors is available, then set the
+        // withCredentials flag.
+        if (this.withCredentials && corsAvailable) {
+            xhr.withCredentials = true;
+        }
+
         var self = this;
         xhr.onreadystatechange = function () { self._xhrCallback(); };
         xhr.open(method, url, true);
