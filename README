@@ -112,6 +112,13 @@ Properties of Request Object:
     Explicitly set the transport to use. Default is transportType.Auto, which
     automatically chooses the best transport when the request is started.
 
+  withCredentials: boolean
+    If set to true, and the request will be a cross-origin request performed
+    over an XmlHttpRequest transport using CORS, then the withCredentials flag
+    will be set on the XmlHttpRequest object to be used.  Use this flag if the
+    CORS request needs to have HTTP Cookies and/or HTTP Authentication
+    information sent along with it.
+
 Retries:
 
   When a request fails at the transport level, or the request succeeds with an
