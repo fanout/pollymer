@@ -1,6 +1,6 @@
 /**
  * Pollymer JavaScript Library v1.0.0
- * Copyright 2013 Fan Out Networks, Inc.
+ * Copyright 2013 Fanout, Inc.
  * Released under the MIT license (see COPYING file in source distribution)
  */
 (function () {
