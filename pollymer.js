@@ -9,7 +9,6 @@ var DEBUG = true;
 (function (window, undefined) {
 
     var NAMESPACE = "Pollymer";
-    var TIMEOUT = 60000;
     var emptyMethod = function () { };
 
     var consoleInfo;
@@ -206,6 +205,7 @@ var DEBUG = true;
         this.maxDelay = 1000;
         this.recurring = false;
         this.withCredentials = false;
+        this.timeout = 60000
 
         if (arguments.length > 0) {
             var config = arguments[0];
@@ -226,6 +226,9 @@ var DEBUG = true;
             }
             if ("withCredentials" in config) {
                 this.withCredentials = config.withCredentials;
+            }
+            if ("timeout" in config) {
+                this.timeout = config.timeout
             }
         }
     };
@@ -285,7 +288,7 @@ var DEBUG = true;
     };
     Request.prototype._startConnect = function () {
         var self = this;
-        this._timer = window.setTimeout(function () { self._timeout(); }, TIMEOUT);
+        this._timer = window.setTimeout(function () { self._timeout(); }, this.timeout);
 
         this._tries++;
 
