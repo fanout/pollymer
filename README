@@ -119,6 +119,10 @@ Properties of Request Object:
     CORS request needs to have HTTP Cookies and/or HTTP Authentication
     information sent along with it.
 
+  timeout: integer
+    Request wait timeout in milliseconds.
+    Default 60000.
+
 Retries:
 
   When a request fails at the transport level, or the request succeeds with an
