@@ -123,6 +123,12 @@ Properties of Request Object:
     Request wait timeout in milliseconds.
     Default 60000.
 
+  errorCodes: string
+    The error codes and/or ranges that should cause automatic retrying. For
+    example, to have all error codes in the 500-599 range cause an automatic
+    retry except for code 501, you could set errorCodes to '500,502-599'.
+    Default is '500-599'.
+
 Retries:
 
   When a request fails at the transport level, or the request succeeds with an

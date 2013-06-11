@@ -67,6 +67,29 @@ var DEBUG = true;
         return headers;
     };
 
+    var checkForErrorCode = function (codesStr, code) {
+        var parts = codesStr.split(',');
+        for (var i = 0; i < parts.length; i++) {
+            var part = parts[i];
+            var index = part.indexOf('-');
+            if (index >= 0) {
+                // part is a range
+                var min = parseInt(part.substring(0, index), 10);
+                var max = parseInt(part.substring(index + 1), 10);
+                if (code >= min && code <= max) {
+                    return true;
+                }
+            } else {
+                // part is a single value
+                var val = parseInt(part, 10);
+                if (code == val) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
     var addJsonpScriptToDom = function (src, scriptId) {
         var script = window.document.createElement("script");
         script.type = "text/javascript";
@@ -205,7 +228,8 @@ var DEBUG = true;
         this.maxDelay = 1000;
         this.recurring = false;
         this.withCredentials = false;
-        this.timeout = 60000
+        this.timeout = 60000;
+        this.errorCodes = '500-599';
 
         if (arguments.length > 0) {
             var config = arguments[0];
@@ -228,7 +252,10 @@ var DEBUG = true;
                 this.withCredentials = config.withCredentials;
             }
             if ("timeout" in config) {
-                this.timeout = config.timeout
+                this.timeout = config.timeout;
+            }
+            if ("errorCodes" in config) {
+                this.errorCodes = config.errorCodes;
             }
         }
     };
@@ -425,7 +452,7 @@ var DEBUG = true;
     Request.prototype._handleResponse = function (code, reason, headers, body) {
         this._cleanupConnect();
 
-        if ((code == 0 || (code >= 500 && code < 600)) &&
+        if ((code == 0 || checkForErrorCode(this.errorCodes, code)) &&
             (this.maxTries == -1 || this._tries < this.maxTries)) {
             this._retry();
         } else {
