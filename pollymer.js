@@ -58,6 +58,9 @@ var DEBUG = true;
         var headerPairs = headerStr.split('\u000d\u000a');
         for (var i = 0; i < headerPairs.length; i++) {
             var headerPair = headerPairs[i];
+            if (headerPair[0] == '\u000a') {
+                headerPair = headerPair.substring(1);
+            }
             var index = headerPair.indexOf('\u003a\u0020');
             if (index > 0) {
                 var key = headerPair.substring(0, index);
