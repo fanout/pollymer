@@ -58,6 +58,7 @@ var DEBUG = true;
         var headerPairs = headerStr.split('\u000d\u000a');
         for (var i = 0; i < headerPairs.length; i++) {
             var headerPair = headerPairs[i];
+            // IE sometimes puts a newline at the start of header names
             if (headerPair[0] == '\u000a') {
                 headerPair = headerPair.substring(1);
             }
