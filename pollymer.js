@@ -1,25 +1,39 @@
 /**
- * Pollymer JavaScript Library v1.0.0
+ * Pollymer JavaScript Library v1.1.0
  * Copyright 2013 Fanout, Inc.
  * Released under the MIT license (see COPYING file in source distribution)
  */
-(function () {
-"use strict";
-var DEBUG = true;
-(function (window, undefined) {
+(function(factory) {
+    "use strict";
+    var DEBUG = true;
+    var isWindow = function(variable) {
+        return variable && variable.document && variable.location && variable.alert && variable.setInterval;
+    }
+    if (!isWindow(window)) {
+        throw "The current version of Pollymer may only be used within the context of a browser.";
+    }
+    var debugMode = DEBUG && typeof(window.console) !== "undefined";
+    if (typeof define === 'function' && define['amd']) {
+        // AMD anonymous module
+        define(['exports'], function(exports) { factory(exports, window, debugMode); });
+    } else {
+        // No module loader (plain <script> tag) - put directly in global namespace
+        factory(window['Pollymer'] = {}, window, debugMode);
+    }
+})(function(exports, window, debugMode) {
 
-    var NAMESPACE = "Pollymer";
     var emptyMethod = function () { };
 
     var consoleInfo;
     var consoleError;
-    if (DEBUG) {
-        // don't break if there's no console
-        if (typeof (window.console) === "undefined") {
-            window.console = { info: emptyMethod, error: emptyMethod };
-        }
-        consoleInfo = function (output) { window.console.info(output); };
-        consoleError = function (output) { window.console.error(output); };
+
+    if (debugMode) {
+        consoleInfo = window.console.info ?
+            function(val) { window.console.info(val); } :
+            function(val) { window.console.log(val); }
+        consoleError = window.console.error ?
+            function(val) { window.console.error(val); } :
+            function(val) { window.console.log(val); }
     } else {
         consoleInfo = emptyMethod;
         consoleError = emptyMethod;
@@ -106,36 +120,6 @@ var DEBUG = true;
     var removeJsonpScriptFromDom = function (scriptId) {
         var script = window.document.getElementById(scriptId);
         script.parentNode.removeChild(script);
-    };
-
-    var jsonCallbacks = {
-        id: 0,
-        requests: {},
-        getJsonpCallback: function (id) {
-            var cb;
-            var requests = this.requests;
-            if (id in this.requests) {
-                cb = function (result) { requests[id]._jsonpCallback(result); };
-            } else {
-                consoleInfo("no callback with id " + id);
-                cb = emptyMethod;
-            }
-            return cb;
-        },
-        addJsonpCallback: function (id, obj) {
-            this.requests[id] = obj;
-        },
-        removeJsonpCallback: function (id) {
-            delete this.requests[id];
-        },
-        newCallbackInfo: function () {
-            var callbackInfo = {
-                id: "cb-" + this.id,
-                scriptId: "pd-jsonp-script-" + this.id
-            };
-            this.id++;
-            return callbackInfo;
-        }
     };
 
     var corsAvailable = "withCredentials" in new window.XMLHttpRequest();
@@ -410,11 +394,50 @@ var DEBUG = true;
             this._handleResponse(code, reason, headers, body);
         }
     };
+    Request.prototype._jsonpGuid = "D3DDFE2A-6E6D-47A7-8F3B-0A4A8E71A796";
+    Request.prototype._getJsonpCallbacks = function() {
+        // Jsonp mode means we are safe to use window
+        // (Jsonp only makes sense in the context of a DOM anyway)
+        if (!(this._jsonpGuid in window)) {
+            window[this._jsonpGuid] = {
+                id: 0,
+                requests: {},
+                getJsonpCallback: function (id) {
+                    var cb;
+                    var requests = this.requests;
+                    if (id in this.requests) {
+                        cb = function (result) { requests[id]._jsonpCallback(result); };
+                    } else {
+                        consoleInfo("no callback with id " + id);
+                        cb = emptyMethod;
+                    }
+                    return cb;
+                },
+                addJsonpCallback: function (id, obj) {
+                    this.requests[id] = obj;
+                },
+                removeJsonpCallback: function (id) {
+                    delete this.requests[id];
+                },
+                newCallbackInfo: function () {
+                    var callbackInfo = {
+                        id: "cb-" + this.id,
+                        scriptId: "pd-jsonp-script-" + this.id
+                    };
+                    this.id++;
+                    return callbackInfo;
+                }
+            };
+        }
+
+        return window[this._jsonpGuid];
+    };
     Request.prototype._startJsonp = function (method, url, headers, body) {
-        var jsonp = jsonCallbacks.newCallbackInfo();
+        var jsonpCallbacks = this._getJsonpCallbacks();
+        var jsonp = jsonpCallbacks.newCallbackInfo();
 
         var paramList = [
-            "callback=" + encodeURIComponent("window['" + NAMESPACE + "']._getJsonpCallback(\"" + jsonp.id + "\")")
+            "callback=" + encodeURIComponent("window[\"" + this._jsonpGuid + "\"].getJsonpCallback(\"" + jsonp.id + "\")")
         ];
 
         if (method != "GET") {
@@ -430,7 +453,7 @@ var DEBUG = true;
 
         var src = (url.indexOf("?") != -1) ? url + "&" + params : url + "?" + params;
 
-        jsonCallbacks.addJsonpCallback(jsonp.id, this);
+        jsonpCallbacks.addJsonpCallback(jsonp.id, this);
         addJsonpScriptToDom(src, jsonp.scriptId);
 
         consoleInfo("pollymer: json-p start " + jsonp.id + " " + src);
@@ -438,8 +461,10 @@ var DEBUG = true;
         return jsonp;
     };
     Request.prototype._cleanupJsonp = function (jsonp, abort) {
+        var jsonpCallbacks = this._getJsonpCallbacks();
+
         if (jsonp != null) {
-            jsonCallbacks.removeJsonpCallback(jsonp.id);
+            jsonpCallbacks.removeJsonpCallback(jsonp.id);
             removeJsonpScriptFromDom(jsonp.scriptId);
         }
     };
@@ -498,15 +523,7 @@ var DEBUG = true;
         this._events.trigger('error', this, reason);
     };
 
-    var exports = {
-        Request: Request,
-        TransportTypes: transportTypes,
-        ErrorTypes: errorTypes,
-        _getJsonpCallback: function (id) {
-            return jsonCallbacks.getJsonpCallback(id);
-        }
-    };
-    window[NAMESPACE] = window[NAMESPACE] || exports;
-
-})(window);
-})();
+    exports["Request"] = Request;
+    exports["TransportTypes"] = transportTypes;
+    exports["ErrorTypes"] = errorTypes;
+});
