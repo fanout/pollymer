@@ -1,25 +1,39 @@
 /**
- * Pollymer JavaScript Library v1.0.0
+ * Pollymer JavaScript Library v1.1.0
  * Copyright 2013 Fanout, Inc.
  * Released under the MIT license (see COPYING file in source distribution)
  */
-(function () {
-"use strict";
-var DEBUG = true;
-(function (window, undefined) {
+(function(factory) {
+    "use strict";
+    var DEBUG = true;
+    var isWindow = function(variable) {
+        return variable && variable.document && variable.location && variable.alert && variable.setInterval;
+    }
+    if (!isWindow(window)) {
+        throw "The current version of Pollymer may only be used within the context of a browser.";
+    }
+    var debugMode = DEBUG && typeof(window.console) !== "undefined";
+    if (typeof define === 'function' && define['amd']) {
+        // AMD anonymous module
+        define(['exports'], function(exports) { factory(exports, window, debugMode); });
+    } else {
+        // No module loader (plain <script> tag) - put directly in global namespace
+        factory(window['Pollymer'] = {}, window, debugMode);
+    }
+})(function(exports, window, debugMode) {
 
-    var NAMESPACE = "Pollymer";
     var emptyMethod = function () { };
 
     var consoleInfo;
     var consoleError;
-    if (DEBUG) {
-        // don't break if there's no console
-        if (typeof (window.console) === "undefined") {
-            window.console = { info: emptyMethod, error: emptyMethod };
-        }
-        consoleInfo = function (output) { window.console.info(output); };
-        consoleError = function (output) { window.console.error(output); };
+
+    if (debugMode) {
+        consoleInfo = window.console.info ?
+            function(val) { window.console.info(val); } :
+            function(val) { window.console.log(val); }
+        consoleError = window.console.error ?
+            function(val) { window.console.error(val); } :
+            function(val) { window.console.log(val); }
     } else {
         consoleInfo = emptyMethod;
         consoleError = emptyMethod;
@@ -413,8 +427,9 @@ var DEBUG = true;
     Request.prototype._startJsonp = function (method, url, headers, body) {
         var jsonp = jsonCallbacks.newCallbackInfo();
 
+        // TODO: Doesn't quite work with RequireJS anonymous module yet.
         var paramList = [
-            "callback=" + encodeURIComponent("window['" + NAMESPACE + "']._getJsonpCallback(\"" + jsonp.id + "\")")
+            "callback=" + encodeURIComponent("window['Pollymer']._getJsonpCallback(\"" + jsonp.id + "\")")
         ];
 
         if (method != "GET") {
@@ -498,15 +513,10 @@ var DEBUG = true;
         this._events.trigger('error', this, reason);
     };
 
-    var exports = {
-        Request: Request,
-        TransportTypes: transportTypes,
-        ErrorTypes: errorTypes,
-        _getJsonpCallback: function (id) {
-            return jsonCallbacks.getJsonpCallback(id);
-        }
+    exports["Request"] = Request;
+    exports["TransportTypes"] = transportTypes;
+    exports["ErrorTypes"] = errorTypes;
+    exports["_getJsonpCallback"] = function (id) {
+        return jsonCallbacks.getJsonpCallback(id);
     };
-    window[NAMESPACE] = window[NAMESPACE] || exports;
-
-})(window);
-})();
+});
