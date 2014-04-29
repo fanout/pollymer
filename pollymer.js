@@ -122,36 +122,6 @@
         script.parentNode.removeChild(script);
     };
 
-    var jsonCallbacks = {
-        id: 0,
-        requests: {},
-        getJsonpCallback: function (id) {
-            var cb;
-            var requests = this.requests;
-            if (id in this.requests) {
-                cb = function (result) { requests[id]._jsonpCallback(result); };
-            } else {
-                consoleInfo("no callback with id " + id);
-                cb = emptyMethod;
-            }
-            return cb;
-        },
-        addJsonpCallback: function (id, obj) {
-            this.requests[id] = obj;
-        },
-        removeJsonpCallback: function (id) {
-            delete this.requests[id];
-        },
-        newCallbackInfo: function () {
-            var callbackInfo = {
-                id: "cb-" + this.id,
-                scriptId: "pd-jsonp-script-" + this.id
-            };
-            this.id++;
-            return callbackInfo;
-        }
-    };
-
     var corsAvailable = "withCredentials" in new window.XMLHttpRequest();
 
     var sameOrigin = function (url) {
@@ -424,12 +394,50 @@
             this._handleResponse(code, reason, headers, body);
         }
     };
-    Request.prototype._startJsonp = function (method, url, headers, body) {
-        var jsonp = jsonCallbacks.newCallbackInfo();
+    Request.prototype._jsonpGuid = "D3DDFE2A-6E6D-47A7-8F3B-0A4A8E71A796";
+    Request.prototype._getJsonpCallbacks = function() {
+        // Jsonp mode means we are safe to use window
+        // (Jsonp only makes sense in the context of a DOM anyway)
+        if (!(this._jsonpGuid in window)) {
+            window[this._jsonpGuid] = {
+                id: 0,
+                requests: {},
+                getJsonpCallback: function (id) {
+                    var cb;
+                    var requests = this.requests;
+                    if (id in this.requests) {
+                        cb = function (result) { requests[id]._jsonpCallback(result); };
+                    } else {
+                        consoleInfo("no callback with id " + id);
+                        cb = emptyMethod;
+                    }
+                    return cb;
+                },
+                addJsonpCallback: function (id, obj) {
+                    this.requests[id] = obj;
+                },
+                removeJsonpCallback: function (id) {
+                    delete this.requests[id];
+                },
+                newCallbackInfo: function () {
+                    var callbackInfo = {
+                        id: "cb-" + this.id,
+                        scriptId: "pd-jsonp-script-" + this.id
+                    };
+                    this.id++;
+                    return callbackInfo;
+                }
+            };
+        }
 
-        // TODO: Doesn't quite work with RequireJS anonymous module yet.
+        return window[this._jsonpGuid];
+    };
+    Request.prototype._startJsonp = function (method, url, headers, body) {
+        var jsonpCallbacks = this._getJsonpCallbacks();
+        var jsonp = jsonpCallbacks.newCallbackInfo();
+
         var paramList = [
-            "callback=" + encodeURIComponent("window['Pollymer']._getJsonpCallback(\"" + jsonp.id + "\")")
+            "callback=" + encodeURIComponent("window[\"" + this._jsonpGuid + "\"].getJsonpCallback(\"" + jsonp.id + "\")")
         ];
 
         if (method != "GET") {
@@ -445,7 +453,7 @@
 
         var src = (url.indexOf("?") != -1) ? url + "&" + params : url + "?" + params;
 
-        jsonCallbacks.addJsonpCallback(jsonp.id, this);
+        jsonpCallbacks.addJsonpCallback(jsonp.id, this);
         addJsonpScriptToDom(src, jsonp.scriptId);
 
         consoleInfo("pollymer: json-p start " + jsonp.id + " " + src);
@@ -453,8 +461,10 @@
         return jsonp;
     };
     Request.prototype._cleanupJsonp = function (jsonp, abort) {
+        var jsonpCallbacks = this._getJsonpCallbacks();
+
         if (jsonp != null) {
-            jsonCallbacks.removeJsonpCallback(jsonp.id);
+            jsonpCallbacks.removeJsonpCallback(jsonp.id);
             removeJsonpScriptFromDom(jsonp.scriptId);
         }
     };
@@ -516,7 +526,4 @@
     exports["Request"] = Request;
     exports["TransportTypes"] = transportTypes;
     exports["ErrorTypes"] = errorTypes;
-    exports["_getJsonpCallback"] = function (id) {
-        return jsonCallbacks.getJsonpCallback(id);
-    };
 });
