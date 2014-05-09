@@ -10,6 +10,11 @@ Mailing List: http://lists.fanout.io/listinfo.cgi/fanout-users-fanout.io
 
 Pollymer is a general-purpose AJAX library that provides conveniences for long-polling applications, such as request retries, exponential backoff between requests, randomized request delaying, and workarounds for browser "busy" indications. It also implements multiple transports to ensure cross-domain access works in all major browsers.
 
+License
+-------
+
+Pollymer is offered under the MIT license. See the COPYING file.
+
 Dependencies
 ------------
 
