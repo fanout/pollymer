@@ -1,5 +1,5 @@
 /**
- * Pollymer JavaScript Library v1.1.0
+ * Pollymer JavaScript Library v1.1.1
  * Copyright 2013-2014 Fanout, Inc.
  * Released under the MIT license (see COPYING file in source distribution)
  */
@@ -8,7 +8,7 @@
     var DEBUG = true;
     var isWindow = function(variable) {
         return variable && variable.document && variable.location && variable.alert && variable.setInterval;
-    }
+    };
     if (!isWindow(window)) {
         throw "The current version of Pollymer may only be used within the context of a browser.";
     }
@@ -140,7 +140,16 @@
                 transport = transportTypes.Jsonp;
             }
         } else {
-            transport = transportType;
+            switch (transportType) {
+            case transportTypes.Xhr:
+                transport = transportTypes.Xhr;
+                break;
+            case transportTypes.Jsonp:
+                transport = transportTypes.Jsonp;
+                break;
+            default:
+                transport = null;
+            }
         }
         return transport;
     };
@@ -317,24 +326,35 @@
         // cleanup would be a no-no)
         this._transport = chooseTransport(this.transport, url);
 
-        if (this._transport == transportTypes.Xhr) {
+        switch (this._transport) {
+        case transportTypes.Xhr:
+            consoleInfo("pollymer: Using XHR transport.");
             this._xhr = this._startXhr(method, url, headers, body);
-        } else { // Jsonp
+            break;
+        case transportTypes.Jsonp:
+            consoleInfo("pollymer: Using JSONP transport.");
             this._jsonp = this._startJsonp(method, url, headers, body);
+            break;
+        default:
+            consoleError("pollymer: Invalid transport.");
+            break;
         }
     };
     Request.prototype._cleanupConnect = function (abort) {
         window.clearTimeout(this._timer);
         this._timer = null;
 
-        if (this._transport == transportTypes.Xhr) {
+        switch (this._transport) {
+        case transportTypes.Xhr:
             consoleInfo("pollymer: XHR cleanup");
             this._cleanupXhr(this._xhr, abort);
             this._xhr = null;
-        } else { // Jsonp
+            break;
+        case transportTypes.Jsonp:
             consoleInfo("pollymer: json-p " + this._jsonp.id + " cleanup");
             this._cleanupJsonp(this._jsonp, abort);
             this._jsonp = null;
+            break;
         }
     };
     Request.prototype.abort = function () {
