@@ -35,13 +35,15 @@ Limitations
 Usage
 -----
 
-    var req = new Pollymer.Request();
-    req.on('finished', function(code, result, headers) { ... });
-    req.on('error', function(reason) { ... });
-    var headers = { ... };
-    var body = 'some data';
-    req.maxTries = 2; // try twice
-    req.start('POST', 'http://example.com/path', headers, body);
+```javascript
+var req = new Pollymer.Request();
+req.on('finished', function(code, result, headers) { ... });
+req.on('error', function(reason) { ... });
+var headers = { ... };
+var body = 'some data';
+req.maxTries = 2; // try twice
+req.start('POST', 'http://example.com/path', headers, body);
+```
 
 Methods of Request Object
 -------------------------
