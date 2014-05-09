@@ -67,9 +67,7 @@ Methods of Request Object
     + url: string url, or function that returns a string url if called
     + headers: hash of key/value strings (optional)
     + body: string body data (optional)
-
     + Sometime after the request has been started, a finished or error event will be raised and the object will return to inactive state (unless the recurring flag is set, see below).
-
     + The start method may be called again once the request has completed (unless the recurring flag is set, see below). If called again on the same object, a short random delay will be added before performing the request.
 
   * retry() - Attempt the exact same request again. Normally, Pollymer will automatically retry a request that it considers to be a failure, but this method may be used if the application needs to retry the request for any another reason. Retries have an exponentially increasing delay between them. Do not use retry() if the previous request attempt was considered to be successful, as it will add penalizing delays that you probably don't want in that case.
