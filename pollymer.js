@@ -1,5 +1,5 @@
 /**
- * Pollymer JavaScript Library v1.1.1
+ * Pollymer JavaScript Library v1.1.2
  * Copyright 2013-2014 Fanout, Inc.
  * Released under the MIT license (see COPYING file in source distribution)
  */
@@ -228,6 +228,8 @@
         this.timeout = 60000;
         this.errorCodes = '500-599';
 
+        this.lastRequest = null;
+
         if (arguments.length > 0) {
             var config = arguments[0];
             if ("transport" in config) {
@@ -308,6 +310,7 @@
     };
     Request.prototype._initiate = function (delayMsecs) {
         var self = this;
+        self.lastRequest = null;
         self._timer = window.setTimeout(function () { self._startConnect(); }, delayMsecs);
     };
     Request.prototype._startConnect = function () {
@@ -325,6 +328,14 @@
         // to give public access to it (changing it between now and
         // cleanup would be a no-no)
         this._transport = chooseTransport(this.transport, url);
+
+        self.lastRequest = {
+            method: method,
+            uri: url,
+            headers: headers,
+            body: body,
+            transport: this._transport
+        };
 
         switch (this._transport) {
         case transportTypes.Xhr:
