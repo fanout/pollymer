@@ -18,7 +18,8 @@ Pollymer is offered under the MIT license. See the COPYING file.
 Dependencies
 ------------
 
-  * json2.js
+None, but if you need to support a browser that does not natively provide support for JSON (such as IE7 or lower),
+then you should use the [json2.js polyfill](https://github.com/douglascrockford/JSON-js).
 
 Available Transports
 --------------------
@@ -34,6 +35,13 @@ Limitations
 
 Usage
 -----
+
+For use in a browser script tag (`Pollymer` becomes a global variable), use the pollymer-1.x.x.min.js file in the dist/ directory.
+The non-minified file and sourcemap are also available.
+
+For browserify, use `npm install pollymer`, then `var Pollymer = require('pollymer');`.
+
+For jspm, use 'jspm install github:fanout/pollymer', then `import Pollymer from 'fanout/pollymer';`.
 
 ```javascript
 var req = new Pollymer.Request();
@@ -51,6 +59,7 @@ Methods of Request Object
   * on(event_name, callback) - Add callback for event:
     + event_name: name of event
     + callback: method to call when event occurs
+    + This method returns a function that can be called to remove this callback from the event.
 
   * available events:
     + 'finished': function(code, result, headers)
@@ -60,7 +69,8 @@ Methods of Request Object
     + 'error': function(reason)
       - reason: Pollymer.errorType
 
-  * off(event_name) - Remove callback for event
+  * off(event_name) - Remove callback for event.
+    + Alternatively, call the function that is returned from on().
 
   * start(method, url, headers, body) - start request
     + method: name of method (e.g. 'GET')
@@ -70,9 +80,11 @@ Methods of Request Object
     + Sometime after the request has been started, a finished or error event will be raised and the object will return to inactive state (unless the recurring flag is set, see below).
     + The start method may be called again once the request has completed (unless the recurring flag is set, see below). If called again on the same object, a short random delay will be added before performing the request.
 
-  * retry() - Attempt the exact same request again. Normally, Pollymer will automatically retry a request that it considers to be a failure, but this method may be used if the application needs to retry the request for any another reason. Retries have an exponentially increasing delay between them. Do not use retry() if the previous request attempt was considered to be successful, as it will add penalizing delays that you probably don't want in that case.
+  * retry() - Attempt the exact same request again.
+    + Normally, Pollymer will automatically retry a request that it considers to be a failure, but this method may be used if the application needs to retry the request for any another reason. Retries have an exponentially increasing delay between them. Do not use retry() if the previous request attempt was considered to be successful, as it will add penalizing delays that you probably don't want in that case.
 
-  * abort() - Stop any current request and return the object to inactive state.
+  * abort() - Stop any current request.
+    + This returns the object to inactive state.
 
 Properties of Request Object
 ----------------------------
