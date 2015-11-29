@@ -1,17 +1,17 @@
-VERSION = 1.1.1
+VERSION = 1.1.3
 
-all: dist
-
-distclean:
-	rm -f pollymer-$(VERSION).js pollymer-$(VERSION).min.js
+all: clean build lib
 
 clean:
+	- rm -r dist/
+	- rm -r lib/
 
-dist: pollymer-$(VERSION).min.js
+build:
+	mkdir dist
+	jspm bundle-sfx browser.js dist/pollymer-${VERSION}.js
+	./node_modules/.bin/uglifyjs dist/pollymer-${VERSION}.js -o dist/pollymer-${VERSION}.min.js
 
-pollymer-$(VERSION).js: pollymer.js
-	cp pollymer.js pollymer-$(VERSION).js
+lib:
+	mkdir lib
+	./node_modules/.bin/babel --presets es2015 -d lib/ src/
 
-pollymer-$(VERSION).min.js: pollymer-$(VERSION).js
-	sed -e "s/DEBUG = true/DEBUG = false/g" pollymer-$(VERSION).js | ./compile.py > pollymer-$(VERSION).min.js.tmp
-	mv pollymer-$(VERSION).min.js.tmp pollymer-$(VERSION).min.js
