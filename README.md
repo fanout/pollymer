@@ -1,11 +1,7 @@
 Pollymer
 ========
-Date: May 8th, 2014
 
-Authors:
-  * Justin Karneges <justin@fanout.io>
-  * Katsuyuki Ohmuro <harmony7@pex2.jp>
-
+Authors: Justin Karneges <justin@fanout.io>, Katsuyuki Ohmuro <harmony7@pex2.jp>  
 Mailing List: http://lists.fanout.io/listinfo.cgi/fanout-users-fanout.io
 
 Pollymer is a general-purpose AJAX library that provides conveniences for long-polling applications, such as request retries, exponential backoff between requests, randomized request delaying, and workarounds for browser "busy" indications. It also implements multiple transports to ensure cross-domain access works in all major browsers.
