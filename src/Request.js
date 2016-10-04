@@ -2,7 +2,7 @@ import TransportTypes from './TransportTypes';
 import ErrorTypes from './ErrorTypes';
 
 import Events from './Events';
-import { consoleInfo, consoleError } from './ConsoleUtils';
+//import { consoleInfo, consoleError } from './ConsoleUtils';
 
 // Global object (window in browsers)
 
@@ -176,7 +176,7 @@ export default class Request {
     }
     start(method, url, headers, body) {
         if (this._timer != null) {
-            consoleError("pollymer: start() called on a Request object that is currently running.");
+            //consoleError("pollymer: start() called on a Request object that is currently running.");
             return;
         }
 
@@ -193,7 +193,7 @@ export default class Request {
         if (this._delayNext) {
             this._delayNext = false;
             delayTime = Math.floor(Math.random() * this.maxDelay);
-            consoleInfo("pollymer: polling again in " + delayTime + "ms");
+            //consoleInfo("pollymer: polling again in " + delayTime + "ms");
         } else {
             delayTime = 0; // always queue the call, to prevent browser "busy"
         }
@@ -202,11 +202,11 @@ export default class Request {
     }
     retry() {
         if (this._tries == 0) {
-            consoleError("pollymer: retry() called on a Request object that has never been started.");
+            //consoleError("pollymer: retry() called on a Request object that has never been started.");
             return;
         }
         if (this._timer != null) {
-            consoleError("pollymer: retry() called on a Request object that is currently running.");
+            //consoleError("pollymer: retry() called on a Request object that is currently running.");
             return;
         }
         this._retry();
@@ -220,7 +220,7 @@ export default class Request {
 
         var delayTime = this._retryTime * 1000;
         delayTime += Math.floor(Math.random() * this.maxDelay);
-        consoleInfo("pollymer: trying again in " + delayTime + "ms");
+        //consoleInfo("pollymer: trying again in " + delayTime + "ms");
 
         this._initiate(delayTime);
     }
@@ -255,15 +255,15 @@ export default class Request {
 
         switch (this._transport) {
             case TransportTypes.Xhr:
-                consoleInfo("pollymer: Using XHR transport.");
+                //consoleInfo("pollymer: Using XHR transport.");
                 this._xhr = this._startXhr(method, url, headers, body);
                 break;
             case TransportTypes.Jsonp:
-                consoleInfo("pollymer: Using JSONP transport.");
+                //consoleInfo("pollymer: Using JSONP transport.");
                 this._jsonp = this._startJsonp(method, url, headers, body);
                 break;
             default:
-                consoleError("pollymer: Invalid transport.");
+                //consoleError("pollymer: Invalid transport.");
                 break;
         }
     }
@@ -273,12 +273,12 @@ export default class Request {
 
         switch (this._transport) {
             case TransportTypes.Xhr:
-                consoleInfo("pollymer: XHR cleanup");
+                //consoleInfo("pollymer: XHR cleanup");
                 this._cleanupXhr(this._xhr, abort);
                 this._xhr = null;
                 break;
             case TransportTypes.Jsonp:
-                consoleInfo("pollymer: json-p " + this._jsonp.id + " cleanup");
+                //consoleInfo("pollymer: json-p " + this._jsonp.id + " cleanup");
                 this._cleanupJsonp(this._jsonp, abort);
                 this._jsonp = null;
                 break;
@@ -314,7 +314,7 @@ export default class Request {
 
         xhr.send(body);
 
-        consoleInfo("pollymer: XHR start " + url);
+        //consoleInfo("pollymer: XHR start " + url);
 
         return xhr;
     }
@@ -329,7 +329,7 @@ export default class Request {
     _xhrCallback() {
         var xhr = this._xhr;
         if (xhr != null && xhr.readyState === 4) {
-            consoleInfo("pollymer: XHR finished");
+            //consoleInfo("pollymer: XHR finished");
 
             var code = xhr.status;
             var reason = xhr.statusText;
@@ -352,7 +352,7 @@ export default class Request {
                     if (id in this.requests) {
                         cb = function (result) { requests[id]._jsonpCallback(result); };
                     } else {
-                        consoleInfo("no callback with id " + id);
+                        //consoleInfo("no callback with id " + id);
                         cb = emptyMethod;
                     }
                     return cb;
@@ -400,7 +400,7 @@ export default class Request {
         jsonpCallbacks.addJsonpCallback(jsonp.id, this);
         addJsonpScriptToDom(src, jsonp.scriptId);
 
-        consoleInfo("pollymer: json-p start " + jsonp.id + " " + src);
+        //consoleInfo("pollymer: json-p start " + jsonp.id + " " + src);
 
         return jsonp;
     }
@@ -413,7 +413,7 @@ export default class Request {
         }
     }
     _jsonpCallback(result) {
-        consoleInfo("pollymer: json-p " + this._jsonp.id + " finished");
+        //consoleInfo("pollymer: json-p " + this._jsonp.id + " finished");
 
         var code = ("code" in result) ? result.code : 0;
         var reason = ("reason" in result) ? result.reason : null;
