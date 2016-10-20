@@ -1,6 +1,8 @@
 Pollymer Changelog
 ==================
 
+v. 1.x () Repackaged using browserify, new logging
+
 v. 1.1.3 (11-27-2015)
 
   * npm availability, new on() semantics.
