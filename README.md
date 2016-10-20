@@ -150,3 +150,19 @@ All fields are required except for "headers". Example response:
       },
       "body": "{ \"foo\": \"bar\" }"
     }
+
+Logging
+-------
+
+All logging coming through Pollymer is performed through the Pollymer.logger function, which is
+defined in a development build as
+
+```javascript
+Pollymer.logger = function(type, message) {
+    console.log("Pollymer: " + type + "-" + message);
+};
+```
+
+In a production (minified) build it is set to null.
+
+The consumer of the library is free to assign any function to Pollymer.logger.
