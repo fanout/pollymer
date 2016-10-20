@@ -1,7 +1,10 @@
 Pollymer Changelog
 ==================
 
-v. 1.x () Repackaged using browserify, new logging
+v. 1.2.0 (10-20-2016)
+
+  * repackaged using browserify
+  * new logging
 
 v. 1.1.3 (11-27-2015)
 
